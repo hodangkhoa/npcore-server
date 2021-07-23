@@ -1,46 +1,8 @@
---SetEntityCoords(PlayerPedId(),1957.7397460938,5172.4497070313,47.9102439880379)
-
---1  Coords: 892.2587, -960.8538, 38.18458
---2 Coords: -1366.676, -316.9358, 38.28989
---3 Coords: 1957.7397460938,5172.4497070313,47.910243988037
---4 Coords: -341.86242675781,-2444.3217773438,6.000337600708
-toghud = false
--- 
-RegisterCommand('hud', function(source, args, rawCommand)
-	SendNUIMessage({
-		action = 'charLoaded'
-	})
-end)
-
-RegisterNetEvent('hud:toggleui')
-AddEventHandler('hud:toggleui', function(show)
-    if show == true then
-        toghud = true
-    else
-        toghud = false
-    end
-end)
-
-Citizen.CreateThread(function()
-	while toghud == false do
-		Citizen.Wait(100)
-    SendNUIMessage({
-        action = 'setVoice',
-        voice = 66
-    })
-    SendNUIMessage({
-        action = 'charLoaded'
-    })
-	toghud = true
-end
-end)
-
---FD05J2SX
 local invehicle = false
 local HudStage = 1
-
+local stresslevel = 0
+local isBlocked = false
 local lastValues = {}
-
 local currentValues = {
 	["health"] = 100,
 	["armor"] = 100,
@@ -51,8 +13,18 @@ local currentValues = {
 	["voice"] = 2,
 	["dev"] = false,
 	["devdebug"] = false,
-	["is_talking"] = false
+	["is_talking"] = false,
+	["is_transmitting"] = false
 }
+
+local hud = false
+
+local setHealOnOff = true
+local setArmorOnOff = true
+local setFoodOnOff = true
+local setWateronOff = true
+local setOxyOnOff = true
+local setStressOnOff = true
 
 RegisterNetEvent('car:windowsdown')
 AddEventHandler('car:windowsdown', function()
@@ -75,22 +47,25 @@ AddEventHandler('inv:wellfed', function()
     burgies = 0
 end)
 
+RegisterNetEvent('hudmenu:set')
+AddEventHandler('hudmenu:set', function(data)
+	print("SETTINGS HUD FROM CARHUD",data['Health'])
 
-Citizen.CreateThread( function()
-	while true do
-		Wait(50)
-		local ped = PlayerPedId()
-		if IsPedShooting(ped) and not IsPedCurrentWeaponSilenced(ped) then
-			Citizen.Wait(50)
-			TriggerEvent("client:newStress",true,math.random(3))
-			Citizen.Wait(800)
-		elseif IsPedShooting(ped) and IsPedCurrentWeaponSilenced(ped) then 
-			Citizen.Wait(50)
-			TriggerEvent("client:newStress",true,math.random(2))
-			Citizen.Wait(800)
-		end
-	end
+	setHealOnOff = data['Health']
+	setArmorOnOff = data['Armor']
+	setFoodOnOff = data['Food']
+	setWateronOff = data['Water']
+	setOxyOnOff = data['Oxygen']
+	setStressOnOff = data['Stress']
+
 end)
+
+-- Citizen.CreateThread(function()
+-- 	while true do
+-- 		Citizen.Wait(5000)
+-- 		print("HUD",setHealOnOff,setArmorOnOff,setFoodOnOff,setWateronOff,setOxyOnOff,setStressOnOff)
+-- 	end
+-- end)
 
 RegisterNetEvent('client:anchor')
 AddEventHandler('client:anchor', function()
@@ -122,15 +97,6 @@ AddEventHandler('client:anchor', function()
     end
 end)
 
-
-RegisterCommand('sport', function()
-	local job = exports['isPed']:isPed('job')
-	if job == 'Police' then
-		TriggerEvent('police:sport')
-	else
-		TriggerEvent('DoLongHudText', 'You must be an Officer to enter Sport Mode')
-	end
-end)
 
 local sport = false
 RegisterNetEvent("police:sport")
@@ -168,8 +134,8 @@ local blipgps = {}
 RegisterNetEvent('GPSTrack:Accepted')
 AddEventHandler('GPSTrack:Accepted', function(x,y,z,srcid,stage)
 
-	local job = exports["isPed"]:isPed("job")
-	if job == "Police" or job == "EMS" then
+	local job = exports["isPed"]:isPed("myjob")
+	if job == "police" or job == "ems" then
 		local radius = 50.0
 		if stage == 1 then
 			radius = 150.0
@@ -227,21 +193,6 @@ function GPSTrack(stage)
 	return x,y,z
 end
 
-function GetStress()
-	stress = currentValues["stress"]
-	return stress
-end
-
-function GetFood()
-	hunger = currentValues["hunger"]
-	return hunger
-end
-
-function GetThirst()
-	thirst2 = currentValues["thirst"]
-	return thirst2
-end
-
 RegisterNetEvent('car:windowsup')
 AddEventHandler('car:windowsup', function()
 	local veh = GetVehiclePedIsUsing(PlayerPedId())	
@@ -251,6 +202,22 @@ AddEventHandler('car:windowsup', function()
 		end
 	end
 end)
+
+RegisterNetEvent("police:setClientMeta")
+AddEventHandler("police:setClientMeta",function(meta)
+    if meta == nil then return end
+    if meta.thirst == nil then currentValues["thirst"] = 100 else currentValues["thirst"] = meta.thirst end
+    if meta.hunger == nil then currentValues["hunger"] = 100 else currentValues["hunger"] = meta.hunger end
+	-- print('[carandplayerhud]: ', meta.health, 10.0,meta.health < 10.0)
+    if meta.health < 10.0 then
+        SetEntityHealth(PlayerPedId(),10.0)
+    else
+        SetEntityHealth(PlayerPedId(),meta.health)
+    end
+    SetPlayerMaxArmour(PlayerId(), 60 )
+    SetPedArmour(PlayerPedId(),meta.armour)
+end)
+
 
 RegisterNetEvent('car:windows')
 AddEventHandler('car:windows', function(closeType,window)
@@ -1194,14 +1161,15 @@ function getVehicleInDirection(coordFrom, coordTo)
     return vehicle ~= nil and vehicle or 0
 end
 
+
 RegisterNetEvent("disableHUD")
 AddEventHandler("disableHUD", function(passedinfo)
 	HudStage = passedinfo
 
 end)
 
-RegisterNetEvent("np-jobmanager:playerBecameJob")
-AddEventHandler("np-jobmanager:playerBecameJob", function(job, name)
+RegisterNetEvent("npc-jobmanager:playerBecameJob")
+AddEventHandler("npc-jobmanager:playerBecameJob", function(job, name)
 	if job ~= "police" then isCop = false else isCop = true end
 end)
 
@@ -1365,13 +1333,18 @@ function attachProp(attachModelSent,boneNumberSent,x,y,z,xR,yR,zR)
 	AttachEntityToEntity(attachedProp, PlayerPedId(), bone, x, y, z, xR, yR, zR, 1, 1, 0, 0, 2, 1)
 	SetModelAsNoLongerNeeded(attachModel)
 end
-RegisterNetEvent("OxyMenu")
-AddEventHandler("OxyMenu",function()
-	if currentValues["oxy"] > 25.0 then
-		--RemoveOxyTank
-		TriggerEvent('sendToGui','Remove Oxy Tank','RemoveOxyTank')
-	end
-end)
+-- RegisterNetEvent("OxyMenu")
+-- AddEventHandler("OxyMenu",function()
+-- 	if currentValues["oxy"] > 25.0 then
+-- 		--RemoveOxyTank
+-- 		TriggerEvent('sendToGui','Remove Oxy Tank','RemoveOxyTank')
+-- 	end
+-- end)
+
+-- RegisterCommand('oxyui', function()
+-- 	print("OXY UI")
+-- 	TriggerEvent('OxyMenu')
+-- end)
 
 RegisterNetEvent("RemoveOxyTank")
 AddEventHandler("RemoveOxyTank",function()
@@ -1386,59 +1359,21 @@ AddEventHandler("UseOxygenTank",function()
 	currentValues["oxy"] = 100.0
 	TriggerEvent('menu:hasOxygenTank', true)
 end)
+
+
 dstamina = 0
--- stress, 10000 is maximum, 0 being lowest.
+
 
 RegisterNetEvent("client:updateStress")
 AddEventHandler("client:updateStress",function(newStress)
-	stresslevel = newStress
-	if dstamina == 0 then
-		RevertToStressMultiplier()
-	end
-end)
-sitting = false
-
-
-
-function RevertToStressMultiplier()
-
-	local factor = (stresslevel / 2) / 10000
-	local factor = 1.0 - factor
-
-
-	if factor > 0.1 then
-
-		SetSwimMultiplierForPlayer(PlayerId(), factor)
-		SetRunSprintMultiplierForPlayer(PlayerId(), factor)
-	else
-		SetRunSprintMultiplierForPlayer(PlayerId(), 1.0)
-	end
-
-end
-
--- TaskAimGunScripted(PlayerPedId(), `SCRIPTED_GUN_TASK_PLANE_WING`, true, true);
--- ^ prone shooting
-
--- TaskAimGunScripted(PlayerPedId(), `SCRIPTED_GUN_TASK_WRITHE`, true, true);
--- ^ sit shooting
-
---TaskAimGunScripted(PlayerPedId(), `SCRIPTED_GUN_TASK_HANGING_UPSIDE_DOWN`, true, true);
--- prone upside down shooting
-	   -- TaskAimGunScripted(PlayerPedId(), `SCRIPTED_GUN_TASK_HANGING_UPSIDE_DOWN`, true, true);
- --  SetEntityCoords(PlayerPedId(),GetOffsetFromEntityInWorldCoords(PlayerPedId(), 0.0, 0.0, 1.6))
+    stresslevel = newStress
    
+end)
 
-	--local proneball = CreateObject(`prop_golf_ball`, GetOffsetFromEntityInWorldCoords(PlayerPedId(), 0.0, 0.0, -2.4), true, true, false) 
-	--SetEntityCollision(proneball, true, true)
-	--FreezeEntityPosition(proneball, true)
-
-   --TaskPlayAnim(PlayerPedId(), "move_crawl", "onfront_fwd", 1.0, -8, 0, 16, 0, 0, 0, 0)
-   -- SetPedMovementClipset(PlayerPedId(), "move_ped_mop", true)
-
-
---["W"] = 32,["E"] = 38, ["A"] = 34, ["S"] = 8, ["D"] = 9,
-
-
+RegisterNetEvent("client:blockShake")
+AddEventHandler("client:blockShake",function(isBlockedInfo)
+    isBlocked = isBlockedInfo
+end)
 
 
 imdead = 0
@@ -1647,28 +1582,41 @@ AddEventHandler('food:Condiment', function()
 	if currentValues["hunger"] > 100 then
 		currentValues["hunger"] = 100
 	end
+
+	if 0 > 500 then
+		SetRunSprintMultiplierForPlayer(PlayerId(), 1.15)
+		dstamina = math.random(10,15)
+	else
+		SetRunSprintMultiplierForPlayer(PlayerId(), 1.25)
+		dstamina = math.random(10,15)
+	end
+
+    while dstamina > 0 do
+
+        Citizen.Wait(1000)
+        RestorePlayerStamina(PlayerId(), 1.0)
+        dstamina = dstamina - 1
+
+        if IsPedRagdoll(PlayerPedId()) then
+            SetPedToRagdoll(PlayerPedId(), math.random(5), math.random(5), 3, 0, 0, 0)
+        end
+
+        if math.random(100) > 91 and IsPedRunning(PlayerPedId()) then
+            SetPedToRagdoll(PlayerPedId(), math.random(1000), math.random(1000), 3, 0, 0, 0)
+        end
+
+    end
+
+    dstamina = 0
+
+    if IsPedRunning(PlayerPedId()) then
+        SetPedToRagdoll(PlayerPedId(),6000,6000, 3, 0, 0, 0)
+    end
+
+    SetRunSprintMultiplierForPlayer(PlayerId(), 1.0)
     RevertToStressMultiplier()
 end)
 
-Citizen.CreateThread(function()
-	while true do
-		Citizen.Wait(20000)
-		isDead = exports["npc-deathmanager"]:GetDeath()
-		if currentValues["hunger"] <= 0 then
-			if not isDead then
-				local newhealth = GetEntityHealth(PlayerPedId()) - math.random(5,10)
-				SetEntityHealth(PlayerPedId(), newhealth)
-				TriggerEvent('DoLongHudText', 'You\'re Hungry, Get Some Food!',2)
-			end
-		elseif currentValues["thirst"] <= 0 then
-			if not isDead then
-				local newhealth2 = GetEntityHealth(PlayerPedId()) - math.random(5,10)
-				SetEntityHealth(PlayerPedId(), newhealth2)
-				TriggerEvent('DoLongHudText', 'You\'re Dehydrated, Get a Drink!',2)
-			end
-		end
-	end
-end)
 
 RegisterNetEvent('hadenergy')
 AddEventHandler('hadenergy', function(arg1,arg2,arg3)
@@ -1744,97 +1692,87 @@ function GetInWheelChair()
 end
 
 sleeping = false
---missfbi5ig_0
---lyinginpain_loop_steve
---missprologueig_6
---lying_dead_player0
---missheist_agency3amcs_4b
---lying_idle_crew2
---mp_safehousebong@
---bong_bong
+showInteraction = true
 
 local beds = {
-	2117668672,
-	1631638868,
-	-1787305376,
-	666470117,
-	-1182962909,
-	-1519439119, -- operation
-	-289946279, -- mri
-	-1091386327,
+  2117668672,
+  1631638868,
+  -1787305376,
+  666470117,
+  -1182962909,
+  -1519439119, -- operation
+  -289946279, -- mri
+  -1091386327,
 }
 
 RegisterNetEvent("client:bed")
 AddEventHandler("client:bed",function()
---v_med_bed1=1631638868
---v_med_bed2=2117668672
-	local ped = PlayerPedId()
-	lastPlayerPos = GetEntityCoords(PlayerPedId())
+  local ped = PlayerPedId()
+  lastPlayerPos = GetEntityCoords(PlayerPedId())
 
-	local objFound = nil
-	local near = 999
-	for i=1, #beds do
-		
-		local curobjFound = GetClosestObjectOfType(lastPlayerPos, 3.0, beds[i], 0, 0, 0)
-		if curobjFound ~= 0 then
-			local dist = #(GetEntityCoords(curobjFound) - GetEntityCoords(ped))
+  local objFound = nil
+  local near = 999
+  for i=1, #beds do
 
-			if DoesEntityExist(curobjFound) then
-				if dist ~= 0 and dist < near then
-					near = dist 
-					objFound = curobjFound
-				end
-			end
-		end
-	end
+    local curobjFound = GetClosestObjectOfType(lastPlayerPos, 3.0, beds[i], 0, 0, 0)
+    if curobjFound ~= 0 then
+      local dist = #(GetEntityCoords(curobjFound) - GetEntityCoords(ped))
 
-	if DoesEntityExist(objFound) then
-		TriggerEvent("DoLongHudText","Press [E] to leave the bed at any time.",1)
-	    loadAnimDict( "missfinale_c1@" ) 
-	    Citizen.Wait(500)
-
-	    sleeping = true
-
-		local bedOffset = vector3(-0.2, -0.2, 1.4)
-		if GetEntityModel(objFound) == -289946279 or GetEntityModel(objFound) == -1519439119 then
-			TaskPlayAnim( ped, "anim@gangops@morgue@table@", "body_search", 8.0, 1.0, -1, 1, 0, 0, 0, 0 )
-			bedOffset = vector3(0, 0.05, 2)
-		else
-			TaskPlayAnim( ped, "missfinale_c1@", "lying_dead_player0", 8.0, 1.0, -1, 1, 0, 0, 0, 0 )
-		end
-
-	    while sleeping do
-	    	AttachEntityToEntity(ped, objFound, 1, bedOffset.x, bedOffset.y, bedOffset.z, 0.0, 0.0, 180.0, true, true, true, true, 1, true)
-	    	camOn()
-	    	Citizen.Wait(1)
-	    	SetCamCoord(cam, GetOffsetFromEntityInWorldCoords(objFound, 0.0, -0.8, bedOffset.z + 0.1))
-	    	SetCamRot(cam, -30.0, 0.0, GetEntityHeading(objFound))
-		end
-		
-		local counter = 0	
-	    SetEntityHeading(GetEntityHeading(PlayerPedId()-90))
-	    TriggerEvent("animation:PlayAnimation","getup")
-	    local count=0
-	    while counter < 400 do
-	    	counter = counter + 1
-	    	
-	    	if counter > 250 then
-	    		count = count + 0.004
-	    		AttachEntityToEntity(ped, objFound, 1, bedOffset.x+count, bedOffset.y, bedOffset.z / 2.0, 0.0, 0.0, -90.0, false, false, false, false, 0, false)
-	    	else
-	    		AttachEntityToEntity(ped, objFound, 1, bedOffset.x, bedOffset.y, bedOffset.z / 2.0, 0.0, 0.0, -90.0, false, false, false, false, 0, false)
-	    	end
-	    	Citizen.Wait(1)
-	    end
-
-	    
-	    camOff()
-	    DetachEntity(PlayerPedId(), 1, true)
-
-	    
-
+      if DoesEntityExist(curobjFound) then
+        if dist ~= 0 and dist < near then
+          near = dist
+          objFound = curobjFound
+        end
+      end
     end
-    
+  end
+
+  if DoesEntityExist(objFound) then
+    loadAnimDict( "missfinale_c1@" )
+    Citizen.Wait(500)
+
+    sleeping = true
+    showInteraction = true
+	TriggerEvent('npc-textui:ShowUI', 'show', '[E] Leave Bed')
+
+    local bedOffset = vector3(-0.2, 0.1, 1.4)
+    if GetEntityModel(objFound) == -289946279 or GetEntityModel(objFound) == -1519439119 then
+      TaskPlayAnim( ped, "anim@gangops@morgue@table@", "body_search", 8.0, 1.0, -1, 1, 0, 0, 0, 0 )
+      bedOffset = vector3(0, 0.05, 2)
+    else
+      TaskPlayAnim( ped, "missfinale_c1@", "lying_dead_player0", 8.0, 1.0, -1, 1, 0, 0, 0, 0 )
+    end
+
+      while sleeping do
+        AttachEntityToEntity(ped, objFound, 1, bedOffset.x, bedOffset.y, bedOffset.z, 0.0, 0.0, 180.0, true, true, true, true, 1, true)
+        if not showInteraction then
+		 TriggerEvent('npc-textui:HideUI')
+        end
+        Citizen.Wait(1000)
+    end
+
+    TriggerEvent('npc-textui:HideUI')
+
+    local counter = 0
+      SetEntityHeading(GetEntityHeading(PlayerPedId()-90))
+      TriggerEvent("animation:PlayAnimation","getup")
+      local count=0
+      while counter < 400 do
+        counter = counter + 1
+
+        if counter > 250 then
+          count = count + 0.004
+          AttachEntityToEntity(ped, objFound, 1, bedOffset.x+count, bedOffset.y, bedOffset.z / 2.0, 0.0, 0.0, -90.0, false, false, false, false, 0, false)
+        else
+          AttachEntityToEntity(ped, objFound, 1, bedOffset.x, bedOffset.y, bedOffset.z / 2.0, 0.0, 0.0, -90.0, false, false, false, false, 0, false)
+        end
+        Citizen.Wait(1)
+      end
+
+
+      camOff()
+      DetachEntity(PlayerPedId(), 1, true)
+    end
 end)
 
 function camOn()
@@ -1871,41 +1809,13 @@ AddEventHandler("client:newStress",function(positive,alteredValue)
 	end
 	if positive then
 		TriggerEvent("DoShortHudText",'Stress Gained',6)
-		stresslevel = stresslevel + math.random(20,100)
 	else
 		TriggerEvent("DoShortHudText",'Stress Relieved',6)
-		stresslevel = stresslevel + math.random(20,100)
 	end
 	
 	TriggerServerEvent("server:alterStress",positive,alteredValue)
 end)
 
-
-RegisterNetEvent('ciggy:timed')
-AddEventHandler('ciggy:timed', function(alteredValue, scenario)
-	local removedStress = 0
-	Wait(1000)
-
-	TriggerEvent("DoShortHudText",'Stress is being relieved',6)
-	while true do
-		stresslevel = stresslevel - 1000
-		if stresslevel < 0 then
-			stresslevel = 0
-		end
-		removedStress = removedStress + 100
-		if removedStress >= alteredValue then
-			break
-		end
-		if scenario ~= "None" then
-			if not IsPedUsingScenario(PlayerPedId(),scenario) then
-				TriggerEvent("animation:cancel")
-				break
-			end
-		end
-		Citizen.Wait(1000)
-	end
-	TriggerServerEvent("server:alterStress",false,removedStress)
-end)
 
 RegisterNetEvent("stress:timed")
 AddEventHandler("stress:timed",function(alteredValue,scenario)
@@ -1915,10 +1825,6 @@ AddEventHandler("stress:timed",function(alteredValue,scenario)
 	TriggerEvent("DoShortHudText",'Stress is being relieved',6)
 	SetPlayerMaxArmour(PlayerId(), 60 )
 	while true do
-		stresslevel = stresslevel - 1000
-		if stresslevel < 0 then
-			stresslevel = 0
-		end
 		removedStress = removedStress + 100
 		if removedStress >= alteredValue then
 			break
@@ -1961,50 +1867,12 @@ AddEventHandler("carandplayerhud:godCheck",function(arg)
 	GodEnabled = arg
 end)
 
-HasNuiFocus, IsFocusThreadRunning = false, false
-
-RegisterNetEvent('np-voice:focus:set')
-AddEventHandler('np-voice:focus:set', function(hasFocus, hasKeyboard, hasMouse)
-	HasNuiFocus = hasFocus
-
-	if HasNuiFocus and not IsFocusThreadRunning then
-		Citizen.CreateThread(function ()
-            while HasNuiFocus do
-                if hasKeyboard then
-                    DisableAllControlActions(0)
-                    EnableControlAction(0, 249, true)
-                end
-
-                if not hasKeyboard and hasMouse then
-                    DisableControlAction(0, 1, true)
-                    DisableControlAction(0, 2, true)
-                elseif hasKeyboard and not hasMouse then
-                    EnableControlAction(0, 1, true)
-                    EnableControlAction(0, 2, true)
-                end
-
-                Citizen.Wait(0)
-			end
-        end)
-    end
-end)
-
 function NotificationMessage(message)
 	SetNotificationTextEntry("STRING")
 	AddTextComponentString(message)
 	DrawNotification(0,1)
 end
 
-
-RegisterNetEvent("client:lowerStress")
-AddEventHandler("client:lowerStress", function(amount)
-    stresslevel = stresslevel - amount
-    currentValues["stress"] = stresslevel
-    if stresslevel < 0 then
-        currentValues["stress"] = 0
-        stresslevel = 0
-    end
-end)
 
 RegisterNetEvent('lowerthirst')
 AddEventHandler('lowerthirst', function()
@@ -2024,7 +1892,7 @@ end)
 RegisterNetEvent('changethirst')
 AddEventHandler('changethirst', function()
 	
-	currentValues["thirst"] = currentValues["thirst"] + 40
+	currentValues["thirst"] = currentValues["thirst"] + 25
 
 	if currentValues["thirst"] < 0 then
 		currentValues["thirst"] = 0
@@ -2148,27 +2016,27 @@ Citizen.CreateThread(function()
 		end
 		if not oxyOn then
 			Wait(1000)
-    end
-    -- currentValues["is_talking"] = NetworkIsPlayerTalking(PlayerId())
+   		end
 	end
 end)
 
 Citizen.CreateThread(function ()
 	while true do
 		local isTalking = NetworkIsPlayerTalking(PlayerId())
-		
-		if currentValues["is_talking"] then
-			SendNUIMessage({action = "talking", isTalking = true})
-		elseif not currentValues["is_talking"] then
-			SendNUIMessage({action = "talking", isTalking = false})
+
+		if isTalking and not currentValues["is_talking"] then
+			SendNUIMessage({type = "talkingStatus", is_talking = true})
+		elseif not isTalking and currentValues["is_talking"] then
+			SendNUIMessage({type = "talkingStatus", is_talking = false})
 		end
 
 		currentValues["is_talking"] = isTalking
 
-		Citizen.Wait(200)
+		Citizen.Wait(100)
 	end
 end)
 
+RegisterNetEvent("hud:voice:transmitting")
 AddEventHandler("hud:voice:transmitting", function (transmitting)
 	SendNUIMessage({type = "transmittingStatus", is_transmitting = transmitting})
 end)
@@ -2180,69 +2048,9 @@ function rangePercent(min, max, amt)
 	return (((amt - min) * 100) / (max - min)) / 100
 end
 
-RegisterNetEvent("np-admin:currentDevmode")
-AddEventHandler("np-admin:currentDevmode", function(devmode)
-    currentValues["dev"] = devmode
-end)
-
-RegisterNetEvent("np-admin:currentDebug")
-AddEventHandler("np-admin:currentDebug", function(debugToggle)
-    currentValues["devdebug"] = debugToggle
-end)
-
-local voip = {}
-voip['default'] = {name = 'default', setting = 18.0}
-voip['local'] = {name = 'local', setting = 18.0}
-voip['whisper'] = {name = 'whisper', setting = 4.0}
-voip['yell'] = {name = 'yell', setting = 35.0}
-
-
-RegisterNetEvent('voip:settizng')
-AddEventHandler('voip:settizng', function(voipDistance)
-	if (voipDistance == 1) then
-		distanceSetting = 18.0
-	elseif (voipDistance == 2) then
-		distanceSetting = 4.0
-	elseif (voipDistance == 3) then
-		distanceSetting = 35.0
-	end		
-end)
-
-local currLevel = 2
-Citizen.CreateThread(function()
-    while true do
-        Citizen.Wait(6)
-        if IsControlJustPressed(0, 20) then
-            currLevel =  currentValues["voice"]
-            if currLevel > 3 then
-                currLevel = 1
-			elseif currLevel < 1 then
-				currLevel = 1
-			end
-            if currLevel == 3 then
-                SendNUIMessage({
-                    action = 'setVoice',
-                    voice = 33
-                })
-            elseif currLevel == 2 then
-                SendNUIMessage({
-                    action = 'setVoice',
-                    voice = 33
-                })
-            elseif currLevel == 1 then
-                SendNUIMessage({
-                    action = 'setVoice',
-                    voice = 100
-                })
-            end
-		end
-        -- if isTalking ~= nil then
-        --     SendNUIMessage({
-        --         action = 'talking',
-        --         isTalking = currentValues["is_talking"]
-        --     })
-        -- end
-    end
+RegisterNetEvent("npc-hud:changeRange")
+AddEventHandler("npc-hud:changeRange", function(pRange)
+    currentValues["voice"] = pRange or 2
 end)
 
 -- this should just use nui instead of drawrect - it literally ass fucks usage.
@@ -2296,17 +2104,6 @@ Citizen.CreateThread(function()
 
 			if currentValues["stress"] > 100 then currentValues["stress"] = 100 end
 
-			if distanceSetting == 4.0 then
-				-- currentValues["voice"] = 0.027 * 0.1
-				currentValues["voice"] = 1
-			elseif distanceSetting == 18.0 then
-				-- currentValues["voice"] = 0.027 * 0.5
-				currentValues["voice"] = 2
-			elseif distanceSetting == 35.0 then
-				-- currentValues["voice"] = 0.027
-				currentValues["voice"] = 3
-			end
-
       		if currentValues["hunger"] < 0 then
 				currentValues["hunger"] = 0
 			end
@@ -2329,31 +2126,20 @@ Citizen.CreateThread(function()
 			end
 
 			if valueChanged then
-                local stamina = 116 - GetPlayerSprintStaminaRemaining(PlayerId())
-                SendNUIMessage({
-                    action = "updateStatusHud",
-                    hunger = currentValues["hunger"],
-                    thirst = currentValues["thirst"],
-                    stress = stresslevel / 50,
-                    health = currentValues["health"],
-                    armour = lerp(0,100, rangePercent(0,60,currentValues["armor"])),
-                    stamina = stamina,
-                })
-				-- SendNUIMessage({
-				-- 	type = "updateStatusHud",
-				-- 	hasParachute = currentValues["parachute"],
-				-- 	varSetHealth = currentValues["health"],
-				-- 	varSetArmor = lerp(0,100, rangePercent(0,60,currentValues["armor"])),
-				-- 	varSetHunger = currentValues["hunger"],
-				-- 	varSetThirst = currentValues["thirst"],
-				-- 	varSetOxy = currentValues["oxy"],
-				-- 	varSetStress = currentValues["stress"],
-				-- 	colorblind = colorblind,
-				-- 	varSetVoice = currentValues["voice"],
-				-- 	varDev = currentValues["dev"],
-				-- 	varDevDebug = currentValues["devdebug"],
-				-- 	is_talking = currentValues["is_talking"]
-				-- })
+				SendNUIMessage({
+					type = "updateStatusHud",
+					varSetHealth = currentValues["health"],
+					varSetArmor = lerp(0,100, rangePercent(0,60,currentValues["armor"])),
+					varSetHunger = currentValues["hunger"],
+					varSetThirst = currentValues["thirst"],
+					varSetOxy = currentValues["oxy"],
+					varSetStress = currentValues["stress"],
+					varSetVoice = currentValues["voice"],
+          			is_talking = currentValues["is_talking"],
+					setOxy = setOxyOnOff,
+					setStress = setStressOnOff
+
+				})
 			end
 
 			counter = 25
@@ -2365,11 +2151,6 @@ Citizen.CreateThread(function()
         if get_ped_veh ~= 0 then
             local model = GetEntityModel(get_ped_veh)
             local roll = GetEntityRoll(get_ped_veh)
-  
-            if not IsThisModelABoat(model) and not IsThisModelAHeli(model) and not IsThisModelAPlane(model) and IsEntityInAir(get_ped_veh) or (roll < -50 or roll > 50) then
-                DisableControlAction(0, 59) -- leaning left/right
-                DisableControlAction(0, 60) -- leaning up/down
-            end
 
             if GetPedInVehicleSeat(GetVehiclePedIsIn(get_ped, false), 0) == get_ped then
 				if GetIsTaskActive(get_ped, 165) then
@@ -2389,87 +2170,31 @@ Citizen.CreateThread(function()
 	end
 end)
 
-RegisterCommand('stress', function()
-    stresslevel = stresslevel + 10
-end)
-
 RegisterNetEvent('hud:saveCurrentMeta')
 AddEventHandler('hud:saveCurrentMeta', function()
-	TriggerServerEvent("player:setServerMeta",currentValues["thirst"],currentValues["hunger"])
+	TriggerServerEvent("police:setServerMeta",GetEntityHealth(PlayerPedId()),GetPedArmour(PlayerPedId()),currentValues["thirst"],currentValues["hunger"])
 end)
-
-RegisterNetEvent('npc-login:loadCharData')
-AddEventHandler('npc-login:loadCharData', function(food, water, armor, stressvalue)
-	currentValues["hunger"] = tonumber(food)
-	currentValues["thirst"] = tonumber(water)
-	SetPlayerMaxArmour(PlayerId(), 1000)
-	SetPedArmour(PlayerPedId(),tonumber(armor))
-	-- SetEntityHealth(PlayerPedId(),tonumber(health))
-	currentValues["stress"] = stressvalue
-	stresslevel = stressvalue * 100
-	SetEntityHealth(GetPlayerPed(-1), 200)
-	TriggerEvent('reviveFunction')
-end)
-
--- Citizen.CreateThread(function()
--- 	while true do
--- 		Citizen.Wait(500)
--- 		stresslevel = stresslevel + math.random(100,1000)
--- 	end
--- end)
 
 Citizen.CreateThread(function()
     while true do
-        if stresslevel > 7500 then
-			ShakeGameplayCam('SMALL_EXPLOSION_SHAKE', 0.22)
-			local ped = PlayerPedId()
-			local chance = math.random(1,8)
-			-- if chance == 8 then
-			-- 	SetPedToRagdoll(ped, 1500, 2000, 3, true, true, false)
-			-- end
-        elseif stresslevel > 4500 then
-			ShakeGameplayCam('SMALL_EXPLOSION_SHAKE', 0.1)
-			local chance = math.random(1,12)
-			local ped = PlayerPedId()
-			-- if chance == 12 then
-			-- 	SetPedToRagdoll(ped, 1500, 2000, 3, true, true, false)
-			-- end
-        elseif stresslevel > 2000 then
-            ShakeGameplayCam('SMALL_EXPLOSION_SHAKE', 0.05)
-        end 
-        Citizen.Wait(2000)
-    end
-end)
+    	if currentValues["hunger"] > 0 then
+    		currentValues["hunger"] = currentValues["hunger"] - 2
+    	end
+	    if currentValues["thirst"] > 0 then
+    		currentValues["thirst"] = currentValues["thirst"] - math.random(3)
+    	end	
 
-Citizen.CreateThread(function()
-	while true do
-		Citizen.Wait(1000)
-		isDead = exports["npc-deathmanager"]:GetDeath()
-		if currentValues["hunger"] > 0 then
-			if not isDead then
-				currentValues["hunger"] = currentValues["hunger"] - math.random(2)
-			end
-		end
-
-		if currentValues["thirst"] > 0 then
-			if not isDead then
-				currentValues["thirst"] = currentValues["thirst"] - 1
-			end
-		end
-		Citizen.Wait(math.random(180000,200000))
     	if GodEnabled then currentValues["hunger"] = 100 end
 		if GodEnabled then currentValues["thirst"] = 100 end
-		-- Citizen.Wait(300000)
-		TriggerServerEvent("player:setServerMeta",currentValues["thirst"],currentValues["hunger"])
+
+    	TriggerServerEvent("police:setServerMeta",GetEntityHealth(PlayerPedId()),GetPedArmour(PlayerPedId()),currentValues["thirst"],currentValues["hunger"])
+		Citizen.Wait(200000)
 
 		if currentValues["thirst"] < 20 or currentValues["hunger"] < 20 then
-			isDead = exports["npc-deathmanager"]:GetDeath()
-			if not isDead then
 
 
-				local newhealth = GetEntityHealth(PlayerPedId()) - math.random(10)
-				SetEntityHealth(PlayerPedId(), newhealth)
-			end
+			local newhealth = GetEntityHealth(PlayerPedId()) - math.random(10)
+			SetEntityHealth(PlayerPedId(), newhealth)
 			
 		end
 	end
@@ -2492,20 +2217,6 @@ Citizen.CreateThread(function()
 		end
     end
 end)
-
--- Citizen.CreateThread( function()
-
--- 	while true do 
--- 		local dst = gateCheck()
--- 		if dst < 55.0 then
--- 			rotateGates()
--- 		else
--- 			Citizen.Wait(tonumber(math.ceil(dst)))
--- 		end
--- 		Citizen.Wait(1)
--- 	end
--- end)
-
 
 
 Citizen.CreateThread( function()
@@ -2547,17 +2258,7 @@ end)
 
 
 
-Citizen.CreateThread(function()
-	while true do
-		Citizen.Wait(1000)
-		isDead = exports["npc-deathmanager"]:GetDeath()
-		if not isDead then
-			currentValues["hunger"] = currentValues["hunger"] - math.random(2)
-			currentValues["thirst"] = currentValues["thirst"] - 1
-			Citizen.Wait(math.random(180000,200000))
-		end
-	end
-end)
+
 
 
 Citizen.CreateThread( function()
@@ -2646,51 +2347,89 @@ Citizen.CreateThread( function()
 
 	       	SetGameplayCamRelativePitch(set,0.8)    	       	
 
-	       	
-	      -- 	print(GetGameplayCamRelativePitch())
-
 	    end
 	end
 
 end)
 
 
--- Anchor --
 
-local vehAnchored = false
-local boatArray = {
-    
-}
-
-function toggleAnchor()
-    local playerPed = PlayerPedId()
-    local playerVeh = GetVehiclePedIsIn()
-
-    if IsPedInAnyBoat(playerPed) then
-        local playerVeh = GetVehiclePedIsIn(playerPed, false)
-        local vehPlate = GetVehicleNumberPlateText(playerVeh)
-
-        if boatArray[vehPlate] == nil then
-            boatArray[vehPlate] = {
-                vehAnchored = false
-            }
-        end
-
-        local fin = exports['npc-taskbar']:taskBar(1000, ('%s the anchor!'):format(not boatArray[vehPlate].vehAnchored and 'Dropping' or 'Raising'))
-        if fin == 100 then 
-            if CanAnchorBoatHere(playerVeh) then
-                SetBoatAnchor(playerVeh, not boatArray[vehPlate].vehAnchored)
-                SetBoatFrozenWhenAnchored(playerVeh, true)
-                boatArray[vehPlate].vehAnchored = not boatArray[vehPlate].vehAnchored
-            else
-                TriggerEvent("DoLongHudText", 'You cannot anchor here.', 3)
+Citizen.CreateThread(function()
+    while true do
+        if not isBlocked then
+            if stresslevel > 7500 then
+                ShakeGameplayCam('SMALL_EXPLOSION_SHAKE', 0.1)
+            elseif stresslevel > 4500 then
+                ShakeGameplayCam('SMALL_EXPLOSION_SHAKE', 0.07)
+            elseif stresslevel > 2000 then
+                ShakeGameplayCam('SMALL_EXPLOSION_SHAKE', 0.02)
             end
-        end
-    else
-        TriggerEvent("DoLongHudText", 'You can only do this while in a boat.', 3)
+        end 
+        Citizen.Wait(2000)
     end
-end
+end)
 
-RegisterCommand('anchor', function(src, args, raw)
-    toggleAnchor()
-end, false)
+
+RegisterNetEvent("client:newStress")
+AddEventHandler("client:newStress",function(positive, alteredValue)
+	if stressDisabled then
+		return
+	end
+	if positive then
+		TriggerEvent("DoLongHudText",'Stress Gained',1)
+	else
+		TriggerEvent("DoLongHudText",'Stress Relieved',1)
+	end
+	TriggerServerEvent("server:alterStress",positive,alteredValue)
+end)
+
+
+RegisterNetEvent("client:newStressShot")
+AddEventHandler("client:newStressShot",function(positive, alteredValue)
+	if stressDisabled then
+		return
+	end
+	TriggerServerEvent("server:alterStress",positive,alteredValue)
+end)
+
+-- local display = false
+
+-- RegisterCommand("hud", function(source, args)
+--     SetDisplay(not display)
+-- end)
+
+-- --very important cb 
+-- RegisterNUICallback("exit", function(data)
+--     SetDisplay(false)
+-- end)
+
+-- RegisterNUICallback("main", function(data)
+--     chat(data.text, {0,255,0})
+--     SetDisplay(false)
+-- end)
+
+-- RegisterNUICallback("error", function(data)
+--     SetDisplay(false)
+-- end)
+
+-- function SetDisplay(bool)
+--     display = bool
+--     SetNuiFocus(bool, bool)
+--     SendNUIMessage({
+--         type = "ui",
+--         status = bool,
+--     })
+-- end
+
+-- Citizen.CreateThread(function()
+--     while display do
+--         Citizen.Wait(0)
+
+--         DisableControlAction(0, 1, display) -- LookLeftRight
+--         DisableControlAction(0, 2, display) -- LookUpDown
+--         DisableControlAction(0, 142, display) -- MeleeAttackAlternate
+--         DisableControlAction(0, 18, display) -- Enter
+--         DisableControlAction(0, 322, display) -- ESC
+--         DisableControlAction(0, 106, display) -- VehicleMouseControlOverride
+--     end
+-- end)

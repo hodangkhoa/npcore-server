@@ -1,152 +1,185 @@
-let open = false
-let oxygenDisplay = false
+$(function() {
+    let height = 25.5;
+    window.addEventListener("message", function(event) {
+        if (event.data.type == "updateStatusHud") {
+            $("#varSetHealth")
+                .find(".progress")
+                .attr("style", "width: " + event.data.varSetHealth + "%;");
+            $("#varSetArmor")
+                .find(".progress")
+                .attr("style", "width: " + event.data.varSetArmor + "%;");
 
-window.addEventListener('message', function (event) {
-	switch (event.data.action) {
-        case 'charLoaded':
-            $("body").css({"display" : "block"});
-            break;
-        case 'updateStatusHud':
-            updateStatusLevel(event.data.health, $("#boxSetHealth"));
-            updateStatusLevel(event.data.armour, $("#boxSetArmour"));
-            updateStatusLevel(event.data.hunger, $("#boxSetHunger"));
-            updateStatusLevel(event.data.thirst, $("#boxSetThirst"));
-            updateStatusLevel(event.data.stamina, $("#boxSetStamina"));
-            updateStatusLevel(event.data.stress, $("#boxSetStress"));
-            break;
-        case 'setVoice':
-            setVoiceDistance(event.data.voice);
-            break;
-        case 'talking':
-            if (event.data.isTalking == 0){
-                $("#boxSetProximity").css({"background-color" : "rgb(158, 158, 158)"});
-            }else{
-                $("#boxSetProximity").css({"background-color" : "rgb(84, 84, 84)"});
+            widthHeightSplit(
+                event.data.varSetHunger,
+                $("#varSetHunger").find(".progressBar")
+            );
+            widthHeightSplit(
+                event.data.varSetThirst,
+                $("#varSetThirst").find(".progressBar")
+            );
+            widthHeightSplit(
+                event.data.varSetOxy,
+                $("#varSetOxy").find(".progressBar")
+            );
+
+            widthHeightSplit(
+                event.data.varSetStress,
+                $("#varSetStress").find(".progressBar")
+            );
+
+            let voice = event.data.varSetVoice;
+            if (voice == 1) {
+                Progress(event.data.varSetVoice * 25, '.progress-voice')
             }
-            break;
-        case 'inWater':
-            displayOxygen(event.data.oxygen);
-            break;
-        case 'outWater':
-            hideOxygen();
-            break;
-        case 'updateCarHud':
-            if(event.data.showhud){
-                $('.huds').fadeIn();
-                setProgressSpeed(event.data.speed,'.progress-speed');
+            if (voice == 2) {
+                Progress(event.data.varSetVoice * 30, '.progress-voice')
+            }
+            if (voice == 3) {
+                Progress(101, '.progress-voice')
+            }
+            if (event.data.hasParachute == true) {
+                $("#parachute").removeClass("hidden");
             } else {
-                $('.huds').fadeOut();
+                $("#parachute").addClass("hidden");
+            }
+            if (event.data.setOxy == false){
+                $("#progress-oxygens").fadeOut();
+                $("#oxygen-circle").fadeOut();
+                document.getElementById("stress-circle").style.left = "88px";
+                document.getElementById("stressLeft").style.left = "87%";
+
+            }else if(event.data.setOxy == true){
+                $("#oxygen-circle").fadeIn();
+                $("#progress-oxygens").fadeIn();
+                document.getElementById("stressLeft").style.left = "106%";
+            }
+            if (event.data.setStress == false){
+                $("#stress-circle").fadeOut();
+                $("#stressLeft").fadeOut();
+            }else if(event.data.setStress == true && event.data.setOxy == false){
+                $("#stress-circle").fadeIn();
+                $("#stressLeft").fadeIn();
+                document.getElementById("stress-circle").style.left = "88px";
+            }else if(event.data.setStress == true){
+                $("#stress-circle").fadeIn();
+                $("#stressLeft").fadeIn();
+                document.getElementById("stress-circle").style.left = "108px";
+            }
+            //  console.log("for shit",event.data.setStress,event.data.setOxy)
+            // $("#progress-oxygen").addClass("hidden");
+            changeColor($(".progress-health"), event.data.varSetHealth, false)
+            changeColor($(".progress-armor"), event.data.varSetArmor, false)
+            changeColor($(".progress-burger"), event.data.varSetHunger, false)
+            changeColor($(".progress-water"), event.data.varSetThirst, false)
+            changeColor($(".progress-oxygen"), event.data.varSetOxy, false)
+            changeColor($(".progress-stress"), event.data.varSetStress, true)
+            Progress(event.data.varSetHealth, '.progress-health')
+            Progress(event.data.varSetHunger, '.progress-burger')
+            Progress(event.data.varSetThirst, '.progress-water')
+            Progress(event.data.varSetArmor, '.progress-armor')
+            Progress(event.data.varSetOxy, '.progress-oxygen')
+            Progress(event.data.varSetStress, '.progress-stress')
+
+            if (event.data.varSetHunger <= 15) {
+                document.getElementById("progress-hungerr").style.fill = "#B82929";
+            } else {
+                document.getElementById("progress-hungerr").style.fill = "#1c1c20";
             }
 
-            // Cruise Control Colour
-            if(event.data.cruise){
-                $('#cruiseText').css({"color" : "rgba(12, 230, 12, 0.8"});
-            }else{
-                $('#cruiseText').css({"color" : "#FFFFFF"});
+            if (event.data.varSetThirst <= 15) {
+                document.getElementById("progress-thirstt").style.fill = "#B82929";
+            } else {
+                document.getElementById("progress-thirstt").style.fill = "#1c1c20";
             }
 
-            if(event.data.seatbelt){
-                $('#seatbeltText').css({"color" : "rgba(12, 230, 12, 0.8"});
-            }else{
-                $('#seatbeltText').css({"color" : "rgba(225, 12, 12, 0.8)"});
+            if (event.data.varSetHealth == 100) {
+                Progress(event.data.varSetHealth + 1, '.progress-health')
+            } else {
+                Progress(event.data.varSetHealth, '.progress-health')
             }
-            // Fuel
-            if(event.data.showfuel){
-                setProgressFuel(event.data.fuel,'.progress-fuel');
 
-                if((event.data.fuel > 10 && event.data.fuel <= 20) && !$('.fuel').hasClass('orangeStroke')){
-                    if($('.fuel').hasClass('redStroke')) {
-                        $('.fuel').removeClass('redStroke');
-                    }
-                    $('.fuel').addClass('orangeStroke');
-                } else if(event.data.fuel <= 10 && !$('.fuel').hasClass('redStroke')){
-                    if($('.fuel').hasClass('orangeStroke')) {
-                        $('.fuel').removeClass('orangeStroke');
-                    }
-                    $('.fuel').addClass('redStroke');
-                } else if($('.fuel').hasClass('orangeStroke') || $('.fuel').hasClass('redStroke')) {
-                    $('.fuel.orangeStroke').removeClass('orangeStroke');
-                    $('.fuel.redStroke').removeClass('redStroke');
-                }
+            if (event.data.varSetArmor == 100) {
+                Progress(event.data.varSetArmor + 1, '.progress-armor')
+            } else {
+                Progress(event.data.varSetArmor, '.progress-armor')
             }
-            break;
 
-        default:
+            if (event.data.varSetHunger == 100) {
+                Progress(event.data.varSetHunger + 1, '.progress-burger')
+            } else {
+                Progress(event.data.varSetHunger, '.progress-burger')
+            }
+
+            if (event.data.varSetThirst == 100) {
+                Progress(event.data.varSetThirst + 1, '.progress-water')
+            } else {
+                Progress(event.data.varSetThirst, '.progress-water')
+            }
+        } else if (event.data.type == "talkingStatus") {
+            if (event.data.is_talking) {
+                document.getElementById("progress-voicer").style.stroke = "#D5CD31";
+                document.getElementById("back-voicer").style.fill = "#B9B44E";
+            } else {
+                document.getElementById("progress-voicer").style.stroke = "";
+                document.getElementById("back-voicer").style.fill = "";
+            }
+        } else if (event.data.type == "transmittingStatus") {
+            var element = document.getElementById("progress-voicer");
+            var backelement = document.getElementById("back-voicer");
+            if (event.data.is_transmitting) {
+                element.classList.add("transmitting");
+                backelement.classList.add("transmitting2");
+            } else {
+                element.classList.remove("transmitting");
+                backelement.classList.remove("transmitting2");
+            }
+        }
+    });
+
+    function widthHeightSplit(value, ele) {
+        let eleHeight = (value / 100) * height;
+        let leftOverHeight = height - eleHeight;
+
+        ele.attr(
+            "style",
+            "height: " + eleHeight + "px; top: " + leftOverHeight + "px;"
+        );
+    }
+
+    function changeColor(ele, value, flip) {
+        let add = false;
+        if (flip) {
+            if (value > 85) {
+                add = true;
+            }
+        } else {
+            if (value < 25) {
+                add = true;
+            }
+        }
+
+        if (add) {
+            // ele.find(".barIcon").addClass("danger")
+            ele.find(".progressBar").addClass("dangerGrad");
+        } else {
+            // ele.find(".barIcon").removeClass("danger")
+            ele.find(".progressBar").removeClass("dangerGrad");
+        }
     }
 });
 
-function updateStatusLevel(value, ele) {
-    let height = 38;
-    let eleHeight = (value / 100) * height;
-    let leftOverHeight = height - eleHeight;
 
-    ele.css("height", eleHeight + "px");
-    ele.css("top", leftOverHeight + "px");
-};
-
-function displayOxygen(oxygen){
-    if (!oxygenDisplay){
-        $("#varOxygen").css({"display" : "inline-block"});
-        oxygenDisplay = true;
-    }
-    if (oxygen < 25){
-        $('#boxSetOxygen').css({"background" : "rgb(220, 12, 12)"});
-    }else{
-        $('#boxSetOxygen').css({"background" : "rgb(76, 91, 117)"});
-    }
-    updateStatusLevel(oxygen, $("#boxSetOxygen"));
-};
-
-function hideOxygen(){
-    if(oxygenDisplay){
-        $("#varOxygen").fadeOut(3000);
-        oxygenDisplay = false;
-    }
-};
-
-
-/* CAR HUD */
-function setProgressFuel(percent, element){
+function Progress(percent, element) {
     var circle = document.querySelector(element);
     var radius = circle.r.baseVal.value;
     var circumference = radius * 2 * Math.PI;
-    var html = $(element).parent().parent().find('span');
+    var html = $(element).parent().parent().find("span");
 
     circle.style.strokeDasharray = `${circumference} ${circumference}`;
     circle.style.strokeDashoffset = `${circumference}`;
 
-    const offset = circumference - ((-percent*73)/100) / 100 * circumference;
+    const offset = circumference - ((-percent * 99) / 100 / 100) * circumference;
     circle.style.strokeDashoffset = -offset;
 
     html.text(Math.round(percent));
-  }
-
-  // Speed
-function setProgressSpeed(value, element){
-    var circle = document.querySelector(element);
-    var radius = circle.r.baseVal.value;
-    var circumference = radius * 2 * Math.PI;
-    var html = $(element).parent().parent().find('span');
-    var percent = value*100/220;
-
-    circle.style.strokeDasharray = `${circumference} ${circumference}`;
-    circle.style.strokeDashoffset = `${circumference}`;
-
-    const offset = circumference - ((-percent*73)/100) / 100 * circumference;
-    circle.style.strokeDashoffset = -offset;
-
-    html.text(value);
-}
-
-  // Voice
-function setVoiceDistance(value){
-    var element = $("#varProximity");
-    element.removeClass("status-item--voice-shout");
-    element.removeClass("status-item--voice-whisper");
-
-    if (value===33){
-        element.addClass("status-item--voice-whisper");
-    } else if (value===100){
-        element.addClass("status-item--voice-shout");
-    }
 }
