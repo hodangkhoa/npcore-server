@@ -93,10 +93,6 @@ AddEventHandler('launder:launderCrate', function()
     TriggerServerEvent("launder:launderCrateServer")
 end)
 
-
-
-
-
 RegisterNetEvent('cocaine:currentStatus')
 AddEventHandler('cocaine:currentStatus', function(cocaine_level,cocaine_percent,cocaine_status,cocaine_amount)
     if cocaine_status == 0 then cocaine_status = "No Task Being Done" else cocaine_status = "Task In Process" end
@@ -113,31 +109,6 @@ RegisterNetEvent('cocaine:methCrate')
 AddEventHandler('cocaine:methCrate', function()
     TriggerEvent("pixerium:check",15,"cocaine:takeCrateServer",true)
 end)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 RegisterNetEvent("gangTasks:updateClients")
 AddEventHandler("gangTasks:updateClients", function(newTasks)
