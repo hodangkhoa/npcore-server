@@ -6,6 +6,7 @@ version '1.0.0'
 
 client_script "@npc-scripts/client/errorlog.lua"
 client_script 'client/carhud.lua'
+client_script 'client/seatbelt.lua'
 client_script 'client/cl_autoKick.lua'
 client_script 'client/newsStands.lua'
 server_script 'server/carhud_server.lua'
