@@ -1,13 +1,29 @@
-fx_version 'cerulean'
-games { 'gta5' }
+fx_version 'adamant'
+game 'gta5'
 
-description 'NPC-Emotes'
+description 'NPC-DP-Emotes'
 version '1.0.0'
 
-client_script "@npc-warmenu/warmenu.lua"
-client_script "@npc-scripts/client/errorlog.lua"
+client_scripts {
+	'NativeUI.lua',
+	'config.lua',
+	'client/*.lua'
+}
 
-client_script "client.lua"
-client_script "cl_menu.lua"
-client_script "sitchair.lua"
-client_script "finger-point.lua"
+server_scripts {
+	'config.lua',
+	'server/*.lua'
+}
+
+ui_page "html/menu.html"
+
+files {
+	"html/menu.html",
+	"html/raphael.min.js",
+    "html/wheelnav.min.js",
+    "html/doors.png",
+    "html/engine.png",
+    "html/hood.png",
+    "html/key.png",
+    "html/trunk.png"
+}
