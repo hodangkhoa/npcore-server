@@ -1,3 +1,4 @@
+
 --	[2] = "prop_cs_package_01",
 
 -- delivery / dump start.
@@ -22,7 +23,7 @@ Citizen.CreateThread( function()
 	end
 	while true do 
 		plyId = PlayerPedId()
-		plyCoords = GetEntityCoords(plyId)
+		plyCoords = GetEntityCoords(GetPlayerPed(-1), false)
 		Citizen.Wait(200)
 	end
 end)
@@ -43,7 +44,7 @@ end)
 --Davis
 local pedsused = {}
 
-local cocainetime = false
+local cocainetime = true
 local cracktime = false
 local sellingcocaine = false
 local sellingcrack = false
@@ -57,8 +58,9 @@ end
 
 
 function GetRandomNPC()
-    local playerped = plyId
-    local playerCoords = plyCoords
+	local playerped = plyId
+	plyCoords = GetEntityCoords(GetPlayerPed(-1), false)
+	local playerCoords = plyCoords
     local handle, ped = FindFirstPed()
     local success
     local rped = nil
@@ -302,19 +304,19 @@ AddEventHandler('armed:success', function(wp,sc)
 		if (wp == 1 and math.random(h) > 10) or (wp == 5 and math.random(h) > 50) or (wp == 6 and math.random(h) > 5) then
 			attack = true
 			WeaponHash = GetRandomMelee()
-
+		--	--print("1 level Hostile")
 		elseif wp == 2 and math.random(h) > 15 then
 			attack = true
 			WeaponHash = GetRandomPistol()
-
+		--	--print("2 level Hostile")
 		elseif wp == 3 and math.random(h) > 25 then
 			attack = true
 			WeaponHash = GetRandomSmall()
-
+		--	--print("3 level Hostile")
 		elseif wp == 4  and math.random(h) > 32 then
 			attack = true
 			WeaponHash = GetRandomLarge()
-
+		--	--print("4 level Hostile")
 		end
 
 		if attack then
@@ -327,6 +329,7 @@ AddEventHandler('armed:success', function(wp,sc)
 
 			SetPedDropsWeaponsWhenDead(hp,false)
 			
+		--	--print("weapoin given " .. WeaponHash)
 			GiveWeaponToPed(hp, WeaponHash, 120, 0, 1)
 			SetCurrentPedWeapon(hp, WeaponHash, true)
     		TaskCombatPed(hp, plyId, 0, 16)
@@ -344,7 +347,7 @@ AddEventHandler('armed:success', function(wp,sc)
 
 end)
 
-
+--DevelopedBySterious
 function GetRandomHostile(sc,wp)
     local playerped = plyId
     local playerCoords = GetEntityCoords(playerped)
@@ -504,14 +507,14 @@ RegisterNetEvent('drugs:corner')
 AddEventHandler('drugs:corner', function()
 
 	if cooldown then
-		TriggerEvent("DoShortHudText", "You can only set up on corner once every 1 minute.",1)
+		TriggerEvent("DoShortHudText", "You can only set up on corner once every 1 minute.",10)
 		return
 	end
 
 	if sellingcocaine or sellingcrack or sellingweed then
 		EndSelling()
 	end
-	
+	local plyCoords = GetEntityCoords(GetPlayerPed(-1), false)
     local x, y, z = table.unpack(GetEntityCoords(plyId, true))
     local Area = GetLabelText(GetNameOfZone(x, y, z))
     local x, y, z = table.unpack(GetEntityCoords(plyId, true))
@@ -522,37 +525,37 @@ AddEventHandler('drugs:corner', function()
 
     if (MyStreetName == "Forum Dr" or MyStreetName == "Brouge Ave" or MyStreetName == "Grove St" or MyStreetName == "Macdonald St" or MyStreetName == "Jamestown St" or MyStreetName == "Carson Ave") and exports["npc-inventory"]:hasEnoughOfItem("weedq",1,false) and dst < 500.0 then
 
-	    	TriggerEvent("DoShortHudText", "You are corner selling weed.",1)
+	    	TriggerEvent("DoShortHudText", "You are corner selling weed.",10)
 	    	sellingweed = true
 	    	cooldown = true
 
     else
 	    if not hotSpots[Area] then
-	    	TriggerEvent("DoShortHudText", "You cant do that here..",1)
+	    	TriggerEvent("DoShortHudText", "You cant do that here..",2)
 	    	return
 	    end
 	    if hotSpots[Area]["zone"] == 2 and not cocainetime then
-	    	TriggerEvent("DoShortHudText", "We can not sell cocaine right now, nobody is buying.",1)
+	    	TriggerEvent("DoShortHudText", "We can not sell cocaine right now, nobody is buying.",10)
 	    	return
 	    elseif hotSpots[Area]["zone"] == 2 and cocainetime then
 			if not saleCocaine then
-				TriggerEvent("DoShortHudText", "Noones buying cocaine, too much has been sold recently.",1)
+				TriggerEvent("DoShortHudText", "Noones buying cocaine, too much has been sold recently.",10)
 				return
 			end
-	    	TriggerEvent("DoShortHudText", "You are corner selling cocaine.",1)
+	    	TriggerEvent("DoShortHudText", "You are corner selling cocaine.",10)
 	    	sellingcocaine = true
 	    	cooldown = true
 	    end
 
 	    if hotSpots[Area]["zone"] == 1 and not cracktime then
-	    	TriggerEvent("DoShortHudText", "We can not sell crack right now, nobody is buying.",1)
+	    	TriggerEvent("DoShortHudText", "We can not sell crack right now, nobody is buying.",10)
 	    	return
 	    elseif hotSpots[Area]["zone"] == 1 and cracktime then
 			if not saleCrack then
-				TriggerEvent("DoShortHudText", "Noones buying crack, too much has been sold recently.",1)
+				TriggerEvent("DoShortHudText", "Noones buying crack, too much has been sold recently.",10)
 				return
 			end
-	    	TriggerEvent("DoShortHudText", "You are corner selling crack.",1)
+	    	TriggerEvent("DoShortHudText", "You are corner selling crack.",10)
 	    	sellingcrack = true
 	    	cooldown = true
 	    end
@@ -563,12 +566,12 @@ AddEventHandler('drugs:corner', function()
     while sellingcocaine or sellingcrack or sellingweed do
 
     	Wait(15000)
-    	TriggerEvent("DoShortHudText", "Corner Selling Active.",1)
+    	TriggerEvent("DoShortHudText", "Corner Selling Active.",10)
     	local curCoords = plyCoords
 		local dstCheck = #(plyStartCoords - curCoords)
 		
-		if dstCheck > 25.0 then
-			TriggerEvent("notification","You moved too far and now we have reset your corner sales.")
+		if dstCheck > 45.0 then
+			TriggerEvent("DoShortHudText","You moved too far and now we have reset your corner sales.")
 			EndSelling()
 		end
     	
@@ -605,7 +608,7 @@ AddEventHandler('drugs:corner', function()
  
     end
 
-    TriggerEvent("DoShortHudText", "Sales Ended.",1)
+    TriggerEvent("DoShortHudText", "Sales Ended.",10)
 
     TriggerEvent("increaseAI",false)
 
@@ -621,7 +624,7 @@ AddEventHandler("MovePed",function(p)
 	if pedOwner == PlayerId() then
 		DecorSetBool(usingped, 'ScriptedPed', true)
 	else
-		TriggerServerEvent('npc:peds:decor', GetPlayerServerId(pedOwner), PedToNet(usingped))
+		TriggerServerEvent('np:peds:decor', GetPlayerServerId(pedOwner), PedToNet(usingped))
 	end
 
     local nm1 = math.random(6,9) / 100
@@ -688,7 +691,7 @@ AddEventHandler('AllowSale', function(NPC,saleprice, amount)
 
 	while true do
 		if not canPedBeUsed(NPC,false) then
-
+			--print("Oops, the NPC died or some shit.")
 			return
 		end 
 		local curdst = #(GetEntityCoords(NPC) - plyCoords)
@@ -698,9 +701,10 @@ AddEventHandler('AllowSale', function(NPC,saleprice, amount)
 			return
 		end
 		local x,y,z=table.unpack(GetEntityCoords(NPC))
-		DrawText3DTest(x,y,z, "[" ..Controlkey["generalUse"][2].. "] to sell drugs for " .. saleprice .. " roll(s) [".. Controlkey["generalUseSecondaryWorld"][2] .. "] to shoo")
+		DrawText3DTest(x,y,z, "[" ..Controlkey["generalUse"][2].. "]  " .. saleprice .. " roll(s) [".. Controlkey["generalUseSecondaryWorld"][2] .. "] to shoo")
 		if IsControlJustReleased(2, Controlkey["generalUse"][1]) and #(plyCoords - vector3(x,y,z)) < 2.0 then
 			if IsPedModel(NPC,416176080) then
+				-- print('ok lol')
 				TriggerEvent("shop:isNearPed")
 			end
 
@@ -709,7 +713,7 @@ AddEventHandler('AllowSale', function(NPC,saleprice, amount)
 			if pedOwner == PlayerId() then
 				DecorSetBool(NPC, 'ScriptedPed', true)
 			else
-				TriggerServerEvent('npc:peds:decor', GetPlayerServerId(pedOwner), PedToNet(NPC))
+				TriggerServerEvent('np:peds:decor', GetPlayerServerId(pedOwner), PedToNet(NPC))
 			end
 
 			-- e stroke
@@ -807,6 +811,7 @@ function SellDrugs(NPC,saleprice, amount)
 		return
 	end
 
+	--print("Crack: " .. tostring(crack) .. ", Cocaine: " .. tostring(cocaine) .. ", Weed: " .. tostring(weedbaggies))
 
 
 	if not weedbaggies and sellingweed then
@@ -858,7 +863,7 @@ function SellDrugs(NPC,saleprice, amount)
 
 		PlayAmbientSpeech1(NPC, "Generic_Thanks", "Speech_Params_Force_Shouted_Critical")
 
-		TriggerEvent("player:receiveItem","rollcash",saleprice)
+		TriggerEvent("npc-banned:getID","rollcash",saleprice)
 
 		TriggerServerEvent("police:multipledenominators",true)
 		TriggerEvent("denoms",true)
@@ -990,7 +995,7 @@ function workvehicle()
     SetVehicleOnGroundProperly(veh)
 	local plate = "wine" .. math.random(111,999)
 	SetVehicleNumberPlateText(veh, plate)
-	Citizen.Wait(100)
+	Citizen.Wait(1)
 	plate = GetVehicleNumberPlateText(veh)
     TriggerEvent("keys:addNew",veh,plate)
     TriggerServerEvent('garges:addJobPlate', plate)
@@ -1021,6 +1026,8 @@ AddEventHandler("weed:currenttask", function(workNumber,amountRequired)
 	currentWorkNumber = 0 
 	Citizen.Wait(1000)
 	currentWorkNumber = workNumber
+	
+	--print(currentWorkNumber)
 	while currentWorkNumber ~= 0 do
 		local x = workArray[workNumber]["x"]
 		local y = workArray[workNumber]["y"]
@@ -1066,6 +1073,7 @@ AddEventHandler("COKENEW:currenttask", function(workNumber,amountRequired)
 	currentWorkNumberCOKE = 0 
 	Citizen.Wait(1000)
 	currentWorkNumberCOKE = workNumber
+	--print(currentWorkNumberCOKE)
 	while currentWorkNumberCOKE ~= 0 do
 		local x = workArray2[workNumber]["x"]
 		local y = workArray2[workNumber]["y"]
@@ -1120,6 +1128,7 @@ AddEventHandler("gangTasks:GroupWineryTask", function(cidsent,TaskNumber)
 	SetGps(TaskNumber)
 	local failure = 180000
 	local pass = false
+	--print("fgirst loop")
 	while failure > 0 and not pass do
 		Citizen.Wait(1)
 		local myCrds = plyCoords
@@ -1136,21 +1145,25 @@ AddEventHandler("gangTasks:GroupWineryTask", function(cidsent,TaskNumber)
 				Citizen.Wait(5000)
 			else
 				pass = true
+				--print("trued")
 			end
 		end
 	end
+	--print("first loop finish" .. dst .. " | " .. failure .. " ")
 	if failure == 0 then
 		TriggerServerEvent("task:TaskStateUpdate",TaskNumber,4)
 		return
 	end
 
 	if workvehicles == 0 then
+		--print("spawning work veh")
 		workvehicle()
 	end
 	local processing = true
 	while dst < 250.0 and failures > 0 and processing do
 		Citizen.Wait(1)
 		if math.random(10000) > 9009 and not inminitask then
+			--print("got lucky")
 			inminitask = true
 			local taskluck = math.random(1)
 			if taskluck == 1 then
@@ -1210,9 +1223,11 @@ function doGrapeMiniTask()
 	SetEntityHeading(obj,math.random(360) + 0.0)
 	local minitask = GetOffsetFromEntityInWorldCoords(obj, math.random(100)+0.0, 0.0, 45.0, true, true, false) 
 	SetEntityCoords(obj,minitask["x"],minitask["y"],minitask["z"])
+	--print(GetEntityHeightAboveGround(obj))
 	SetEntityCoords(obj,minitask["x"],minitask["y"],minitask["z"] - GetEntityHeightAboveGround(obj))
 
 	Citizen.Wait(1000)
+	--print(GetEntityHeightAboveGround(obj))
 	PlaceObjectOnGroundProperly(obj)
 
 	
@@ -1234,6 +1249,7 @@ function doGrapeMiniTask()
 		end
 	end
 	if not success then
+		--print("you sucked")
 		return false
 	end
 	local holdingPackage = true
@@ -1266,6 +1282,7 @@ function doGrapeMiniTask()
 		end
 	end
 	if not success then
+		--print("you sucked 2")
 		return false
 	end
 
@@ -1313,12 +1330,14 @@ AddEventHandler("gangTasks:GroupDeliveryTask", function(cidsent,TaskNumber)
 
 	local cid = exports["isPed"]:isPed("cid")
 
-
+	--print(cid .. " CID")
+	--print(cidsent .. " SENT CID")
 
 	if tonumber(cid) ~= tonumber(cidsent) then
 		return
 	end
 	myCrds = plyCoords
+	--print("starting task")
 
 	Citizen.Wait(1000)
 	TriggerEvent("DoLongHudText", activeTasks[TaskNumber]["TaskInfo"])
@@ -1370,8 +1389,8 @@ AddEventHandler("gangTasks:GroupDeliveryTask", function(cidsent,TaskNumber)
 
 	SetVehicleOnGroundProperly(taskveh)
 	SetVehicleHasBeenOwnedByPlayer(taskveh,true)
-	local id = NetworkGetNetworkIdFromEntity(taskveh)
-	SetNetworkIdCanMigrate(id, true)
+	-- local id = NetworkGetNetworkIdFromEntity(taskveh)
+	-- SetNetworkIdCanMigrate(id, true)
 
 	SetVehicleWindowTint(taskveh, 1.0)
 	local plate = GetVehicleNumberPlateText(taskveh)
@@ -1442,7 +1461,8 @@ AddEventHandler("gangTasks:deliveryTask", function(cidsent, TaskNumber)
 
 	local cid = exports["isPed"]:isPed("cid")
 
-
+	--print(cid .. " CID")
+	--print(cidsent .. " SENT CID")
 
 	if tonumber(cid) ~= tonumber(cidsent) then
 		return
@@ -1486,8 +1506,8 @@ AddEventHandler("gangTasks:deliveryTask", function(cidsent, TaskNumber)
 
 	SetVehicleOnGroundProperly(taskveh)
 	SetVehicleHasBeenOwnedByPlayer(taskveh,true)
-	local id = NetworkGetNetworkIdFromEntity(taskveh)
-	SetNetworkIdCanMigrate(id, true)
+	-- local id = NetworkGetNetworkIdFromEntity(taskveh)
+	-- SetNetworkIdCanMigrate(id, true)
 
 	SetVehicleWindowTint(taskveh, 1.0)
 	local plate = GetVehicleNumberPlateText(taskveh)
@@ -1982,7 +2002,7 @@ function DoBodyTask(TaskNumber,failure,taskveh,ped)
 	if pedOwner == PlayerId() then
 		DecorSetBool(ped, 'ScriptedPed', true)
 	else
-		TriggerServerEvent('npc:peds:decor', GetPlayerServerId(pedOwner), PedToNet(ped))
+		TriggerServerEvent('np:peds:decor', GetPlayerServerId(pedOwner), PedToNet(ped))
 	end
 	SetBlockingOfNonTemporaryEvents(ped, true)		
 	SetPedSeeingRange(ped, 0.0)		
@@ -2120,7 +2140,8 @@ AddEventHandler("gangTasks:killTask", function(cidsent,TaskNumber)
 
 	local cid = exports["isPed"]:isPed("cid")
 
-
+	--print(cid .. " CID")
+	--print(cidsent .. " SENT CID")
 
 	if tonumber(cid) ~= tonumber(cidsent) then
 		return
@@ -2189,6 +2210,24 @@ function testanim()
 end
 --testanim()
 
+local storageCoords = {
+	[1] =  { ["groupid"] = "recycle_shop", ['x'] = 764.18,['y'] = -1400.45,['z'] = 26.51,['h'] = 178.55, ['info'] = ' Recycle Outer Storage' },
+	[2] =  { ["groupid"] = "strip_club", ['x'] = 94.42,['y'] = -1293.95,['z'] = 29.27,['h'] = 297.21, ['info'] = ' Strip Club Storage' },
+	[3] =  { ["groupid"] = "carpet_factory", ['x'] = 706.54,['y'] = -960.62,['z'] = 25.4,['h'] = 224.69, ['info'] = ' Carpet Factory Storage' }, -- Not used? Moved in to the ground for now
+	[4] =  { ["groupid"] = "parts_shop", ['x'] = 977.09,['y'] = -104.14,['z'] = 74.85,['h'] = 205.34, ['info'] = ' Part Shop Storage' }, -- QF
+	[5] =  { ["groupid"] = "life_invader", ['x'] = -1052.56,['y'] = -232.5,['z'] = 44.03,['h'] = 110.66, ['info'] = ' Life Invader Storage' },
+	[6] =  { ["groupid"] = "recycle_shop",['x'] = 998.65,['y'] = -3092.11,['z'] = -38.75,['h'] = 257.8, ['info'] = ' Recycle Inner Storage' },
+	[7] =  { ["groupid"] = "illegal_carshop",  ['x'] = -344.69,['y'] = -123.0,['z'] = 39.01,['h'] = 317.49, ['info'] = ' Customs Stash' },
+	[8] =  { ["groupid"] = "repairs_harmony", ['x'] = 1174.99,['y'] = 2636.17,['z'] = 37.76,['h'] = 317.49, ['info'] = ' Harmony Stash' },
+	[9] =  { ["groupid"] = "chop_shop", ['x'] = 548.708,['y'] = -182.292,['z'] = 54.4813,['h'] = 317.49, ['info'] = 'Stroke Masters Stash' },
+	[10] =  { ["groupid"] = "tuner_carshop", ['x'] = 949.89,['y'] = -966.78,['z'] = 39.51,['h'] = 88.5, ['info'] = ' Tuner Shop Stash' },
+	[11] =  { ["groupid"] = "lost_mc", ['x'] = 120.42,['y'] = 3607.11,['z'] = -26.84,['h'] = 267.32, ['info'] = ' The Lost Storage' },
+	[12] =  { ["groupid"] = "rooster_academy", ['x'] = -154.37,['y'] = 319.92,['z'] = 98.88,['h'] = 274.0, ['info'] = ' Rooster Academy Stash' },
+	[13] =  { ["groupid"] = "DriftSchool", ['x'] = -56.17,['y'] = -2520.1,['z'] = 7.4,['h'] = 231.69, ['info'] = ' Overboost Drift Stash' },
+	[14] =  { ["groupid"] = "sahara_int", ['x'] = 883.26,['y'] = -3202.7,['z'] = -98.2,['h'] = 231.69, ['info'] = ' Sahara Stash' },
+}
+
+
 function DrawText3Ds(x,y,z, text)
     local onScreen,_x,_y=World3dToScreen2d(x,y,z)
     local px,py,pz=table.unpack(GetGameplayCamCoords())
@@ -2217,317 +2256,425 @@ end
 -- weed growing shit brah
 
 
--- local crops = {
+local crops = {
 
--- }
+}
 
--- local cropstatus = {
--- 	[1] = { ["info"] = "Looks Good", ["itemid"] = 0 },
--- 	[2] = { ["info"] = "Needs Water", ["itemid"] = 0 },
--- 	[3] = { ["info"] = "Needs Fertilizer", ["itemid"] = 0 },
--- }
-
-
--- RegisterNetEvent("weed:currentcrops")
--- AddEventHandler("weed:currentcrops", function(result)
--- 	local newcrops = {}
--- 	for i = 1, #result do
--- 		local table = result[i]
--- 		newcrops[i] = {  ["x"] = tonumber(table.x), ["y"] = tonumber(table.y), ["z"] = tonumber(table.z), ["growth"] = tonumber(table.growth), ["strain"] = table.strain, ["status"] = tonumber(table.status), ["dbID"] = tonumber(table.id) }
--- 	end
--- 	DeleteTrees()
---     crops = newcrops
--- end)
-
--- function DeleteTrees()
--- 	for i = 1, #crops do
--- 		local ObjectFound = crops[i]["object"]
--- 		if ObjectFound then
--- 			DeleteObject(ObjectFound)
--- 		end
--- 	end
--- end
-
--- function createTreeObject(num)
--- 	local treeModel = `bkr_prop_weed_med_01b`
--- 	local zm = 3.55
--- 	if (crops[num]["growth"] < 33) then
--- 		zm = 1
--- 		treeModel = `bkr_prop_weed_01_small_01b`
--- 	elseif (crops[num]["growth"] > 66) then
--- 		treeModel = `bkr_prop_weed_lrg_01b`
--- 	end
+local cropstatus = {
+	[1] = { ["info"] = "Looks Good", ["itemid"] = 0 },
+	[2] = { ["info"] = "Needs Water", ["itemid"] = 0 },
+	[3] = { ["info"] = "Needs Fertilizer", ["itemid"] = 0 },
+}
 
 
--- 	RequestModel(treeModel)
--- 	while not HasModelLoaded(treeModel) do
--- 		Citizen.Wait(100)
+RegisterNetEvent("weed:currentcrops")
+AddEventHandler("weed:currentcrops", function(result)
+	local newcrops = {}
+	for i = 1, #result do
+		local table = result[i]
+		newcrops[i] = {  ["x"] = tonumber(table.x), ["y"] = tonumber(table.y), ["z"] = tonumber(table.z), ["growth"] = tonumber(table.growth), ["strain"] = table.strain, ["status"] = tonumber(table.status), ["dbID"] = tonumber(table.id) }
+	end
+	DeleteTrees()
+    crops = newcrops
+end)
 
--- 	end
+function DeleteTrees()
+	for i = 1, #crops do
+		local ObjectFound = crops[i]["object"]
+		if ObjectFound then
+			DeleteObject(ObjectFound)
+		end
+	end
+end
 
--- 	local newtree = CreateObject(treeModel,crops[num]["x"],crops[num]["y"],crops[num]["z"]-zm,true,false,false)
--- 	SetEntityCollision(newtree,false,false)
--- 	crops[num]["object"] = newtree
--- end
-
--- function RemoveWeedSeed(seedType)
--- 	TriggerEvent("inventory:removeItem","plastic", 3)
--- 	if seedType == "female" then
--- 	    TriggerEvent("inventory:removeItem", "femaleseed", 1)
--- 	else
--- 		TriggerEvent("inventory:removeItem", "maleseed", 1)
--- 	end
--- end
-
--- function InsertPlant(seed)
--- 	local strain = seed
--- 	local x,y,z = table.unpack(GetOffsetFromEntityInWorldCoords(plyId, 0.0, 0.4, 0.0))
--- 	TriggerServerEvent("weed:createplant",x,y,z,strain)
--- end
-
-
-
--- function nearMale()
-
--- 	local answer = false
-
--- 	for i = 1, #crops do
---     	local dst = #(vector3(crops[i]["x"],crops[i]["y"],crops[i]["z"]) - plyCoords)
---     	if dst < 10.0 and crops[i]["strain"] == "Male" then
---     		answer = true
---     	end
--- 	end
+function createTreeObject(num)
+	local treeModel = `bkr_prop_weed_med_01b`
+	local zm = 3.55
+	if (crops[num]["growth"] < 33) then
+		zm = 1
+		treeModel = `bkr_prop_weed_01_small_01b`
+	elseif (crops[num]["growth"] > 66) then
+		treeModel = `bkr_prop_weed_lrg_01b`
+	end
 
 
--- 	return answer
+	RequestModel(treeModel)
+	while not HasModelLoaded(treeModel) do
+		Citizen.Wait(100)
 
--- end
+	end
 
--- function convertFemales()
--- 	local convertedIds = false
--- 	local convertedTable = {}
--- 	for i = 1, #crops do
---     	local dst = #(vector3(crops[i]["x"],crops[i]["y"],crops[i]["z"]) - plyCoords)
---     	if dst < 10.0 and crops[i]["strain"] == "Kush" and crops[i]["growth"] < 34 then
---     		if not convertedIds then
---     			convertedIds = crops[i]["dbID"]
---     		else
---     			convertedIds = convertedIds .. "," .. crops[i]["dbID"]
---     			convertedTable[#convertedTable+1] = crops[i]["dbID"]
---     		end    		
---     	end
--- 	end
--- 	if not convertedIds then
--- 		return
--- 	end
--- 	TriggerServerEvent("weed:convert",convertedIds,convertedTable)
--- end
+	local newtree = CreateObject(treeModel,crops[num]["x"],crops[num]["y"],crops[num]["z"]-zm,true,false,false)
+	SetEntityCollision(newtree,false,false)
+	crops[num]["object"] = newtree
+end
 
--- RegisterNetEvent("weed:startcrop")
--- AddEventHandler("weed:startcrop", function(seedType)
+function RemoveWeedSeed(seedType)
+	TriggerEvent("inventory:removeItem","plastic", 3)
+	if seedType == "female" then
+	    TriggerEvent("inventory:removeItem", "femaleseed", 1)
+	else
+		TriggerEvent("inventory:removeItem", "maleseed", 1)
+	end
+end
 
-
--- 	if not exports["npc-inventory"]:hasEnoughOfItem("plastic",3,true) then
--- 		return
--- 	end
-
--- 	local Seed = "Kush"
-
--- 	if seedType == "female" and nearMale() then
--- 		Seed = "Seeded"
--- 	end
+function InsertPlant(seed)
+	local strain = seed
+	local x,y,z = table.unpack(GetOffsetFromEntityInWorldCoords(plyId, 0.0, 0.4, 0.0))
+	TriggerServerEvent("weed:createplant",x,y,z,strain)
+end
 
 
--- 	if seedType == "male" then
--- 		convertFemales()
--- 		Seed = "Male"
--- 	end
 
---     local success = true
+function nearMale()
 
---     for i = 1, #crops do
---     	local dst = #(vector3(crops[i]["x"],crops[i]["y"],crops[i]["z"]) - plyCoords)
---     	if dst < 1.0 then
---     		success = false
---     	end
---     end
+	local answer = false
 
---     if success then
---         RemoveWeedSeed(seedType)
---         InsertPlant(Seed)
---     end
-
--- end)
+	for i = 1, #crops do
+    	local dst = #(vector3(crops[i]["x"],crops[i]["y"],crops[i]["z"]) - plyCoords)
+    	if dst < 10.0 and crops[i]["strain"] == "Male" then
+    		answer = true
+    	end
+	end
 
 
--- RegisterNetEvent("weed:destroyplant")
--- AddEventHandler("weed:destroyplant", function()
+	return answer
 
--- 	local close = 0
--- 	local dst = 1000.0
--- 	for i = 1, #crops do
--- 		local storagedist = #(vector3(crops[i]["x"],crops[i]["y"],crops[i]["z"]) - plyCoords)
--- 		if storagedist < 3.0 then
--- 			if storagedist < dst then
--- 				dst = storagedist
--- 				close = i
--- 			end
--- 		end
--- 	end
--- 	local finished = exports["npc-taskbar"]:taskBar(6000,"Destroy")
--- 	if finished == 100 then
--- 		TriggerServerEvent("weed:destroy",crops[close]["dbID"])
--- 	end
--- end)
+end
 
--- RegisterNetEvent("weed:updateplantwithID")
--- AddEventHandler("weed:updateplantwithID", function(ids,newPercent,status)
--- 	if status == "alter" then
--- 		for i = 1, #crops do
--- 			if(crops[i] ~= nil) then
--- 				if crops[i]["dbID"] == ids then
--- 					crops[i]["growth"] = newPercent
--- 					crops[i]["status"] = 1
--- 				end
--- 			end
--- 		end		
--- 	elseif status == "remove" then
+function convertFemales()
+	local convertedIds = false
+	local convertedTable = {}
+	for i = 1, #crops do
+    	local dst = #(vector3(crops[i]["x"],crops[i]["y"],crops[i]["z"]) - plyCoords)
+    	if dst < 10.0 and crops[i]["strain"] == "Kush" and crops[i]["growth"] < 34 then
+    		if not convertedIds then
+    			convertedIds = crops[i]["dbID"]
+    		else
+    			convertedIds = convertedIds .. "," .. crops[i]["dbID"]
+    			convertedTable[#convertedTable+1] = crops[i]["dbID"]
+    		end    		
+    	end
+	end
+	if not convertedIds then
+		return
+	end
+	--print(convertedIds)
+	TriggerServerEvent("weed:convert",convertedIds,convertedTable)
+end
 
--- 		for i = 1, #crops do
--- 			if(crops[i] ~= nil) then
--- 				if crops[i]["dbID"] == ids then
--- 					table.remove(crops,i)
--- 				end
--- 			end
--- 		end
-
--- 	elseif status == "convert" then
--- 		for d = 1, #ids do
--- 			for i = 1, #crops do
--- 				if(crops[i] ~= nil) then
--- 					if crops[i]["dbID"] == ids then
--- 						crops[i]["strain"] = "seeded"
--- 					end
--- 				end
--- 			end
--- 		end
--- 	elseif status == "new" then
--- 		crops[#crops+1] = ids
--- 	end
--- end)
+RegisterNetEvent("weed:startcrop")
+AddEventHandler("weed:startcrop", function(seedType)
 
 
--- RegisterNetEvent("weed:giveitems")
--- AddEventHandler("weed:giveitems", function(strain)
+	if not exports["npc-inventory"]:hasEnoughOfItem("plastic",3,true) then
+		return
+	end
 
--- 	if strain == "Seeded" then
---         TriggerEvent( "player:receiveItem","femaleseed",math.random(1,12))
--- 		if math.random(100) < 10 then
--- 	        TriggerEvent( "player:receiveItem","maleseed",1)
--- 	    end    
--- 	else
--- 		if strain == "Male" then
--- 			TriggerEvent( "player:receiveItem","femaleseed",math.random(1,2))
--- 			TriggerEvent( "player:receiveItem","weedq",math.random(3,8))
--- 		else
+	local Seed = "Kush"
 
--- 			Citizen.Wait(500)
--- 			TriggerEvent( "player:receiveItem","weedq",math.random(10,25))
--- 		end
--- 	end
--- end)
+	if seedType == "female" and nearMale() then
+		Seed = "Seeded"
+	end
 
 
--- local inhouse = false
--- RegisterNetEvent("inhouse")
--- AddEventHandler("inhouse", function(status)
--- 	inhouse = status
--- end)
+	if seedType == "male" then
+		convertFemales()
+		Seed = "Male"
+	end
 
--- Citizen.CreateThread( function()
--- 	local counter = 0
--- 	while true do 
+    local success = true
 
--- 		if not inhouse then
--- 			Citizen.Wait(3000)
--- 		else
--- 			Citizen.Wait(1)
--- 			local close = 0
--- 			local dst = 1000.0
--- 			for i = 1, #crops do
--- 				local storagedist = #(vector3(crops[i]["x"],crops[i]["y"],crops[i]["z"]) - plyCoords)
--- 				if storagedist < 80.0 then
--- 					if storagedist < dst then
--- 						dst = storagedist
--- 						close = i
--- 					end
--- 					if crops[i]["object"] == nil then
--- 						createTreeObject(i)
--- 					elseif crops[i]["object"] then
--- 						if not DoesEntityExist(crops[i]["object"]) then
--- 							createTreeObject(i)
--- 						end					
--- 					end
--- 				else
--- 					if crops[i]["object"] then
--- 						DeleteObject(crops[i]["object"])
--- 						crops[i]["object"] = nil
--- 					end
--- 				end
--- 			end
+    for i = 1, #crops do
+    	local dst = #(vector3(crops[i]["x"],crops[i]["y"],crops[i]["z"]) - plyCoords)
+    	if dst < 1.0 then
+    		success = false
+    	end
+    end
 
--- 			if counter > 0 then
--- 				counter = counter - 1
--- 			end
--- 			if dst > 80.0 then
--- 				if counter > 0 or counter < 0 then
--- 					counter = 0
--- 				end
--- 				Citizen.Wait(math.ceil(dst*3))
--- 			else
--- 				if #(vector3(crops[close]["x"],crops[close]["y"],crops[close]["z"]-0.3) - plyCoords) < 10.0 then
--- 					local num = tonumber(crops[close]["status"])
--- 					DrawText3Ds( crops[close]["x"],crops[close]["y"], crops[close]["z"] , "["..Controlkey["generalUse"][2].."] " .. crops[close]["strain"] .. " Strain  @ " .. crops[close]["growth"] .. "% - " .. cropstatus[num]["info"])
--- 					if IsControlJustReleased(2, Controlkey["generalUse"][1]) and #(vector3(crops[close]["x"],crops[close]["y"],crops[close]["z"]-0.3) - plyCoords) < 2.0 and counter == 0 then
--- 						if crops[close]["growth"] > 100 then
--- 							local finished = exports["npc-taskbar"]:taskBar(1000,"Picking")
--- 							TriggerEvent("Evidence:StateSet",4,1600)
+    if success then
+        RemoveWeedSeed(seedType)
+        InsertPlant(Seed)
+    end
+
+end)
+
+
+RegisterNetEvent("weed:destroyplant")
+AddEventHandler("weed:destroyplant", function()
+
+	local close = 0
+	local dst = 1000.0
+	for i = 1, #crops do
+		local storagedist = #(vector3(crops[i]["x"],crops[i]["y"],crops[i]["z"]) - plyCoords)
+		if storagedist < 3.0 then
+			if storagedist < dst then
+				dst = storagedist
+				close = i
+			end
+		end
+	end
+	local finished = exports["npc-taskbar"]:taskBar(6000,"Destroy")
+	if finished == 100 then
+		TriggerServerEvent("weed:destroy",crops[close]["dbID"])
+	end
+end)
+
+RegisterNetEvent("weed:updateplantwithID")
+AddEventHandler("weed:updateplantwithID", function(ids,newPercent,status)
+	if status == "alter" then
+		for i = 1, #crops do
+			if(crops[i] ~= nil) then
+				if crops[i]["dbID"] == ids then
+					crops[i]["growth"] = newPercent
+					crops[i]["status"] = 1
+				end
+			end
+		end		
+	elseif status == "remove" then
+
+		for i = 1, #crops do
+			if(crops[i] ~= nil) then
+				if crops[i]["dbID"] == ids then
+					table.remove(crops,i)
+				end
+			end
+		end
+
+	elseif status == "convert" then
+		for d = 1, #ids do
+			for i = 1, #crops do
+				if(crops[i] ~= nil) then
+					if crops[i]["dbID"] == ids then
+						crops[i]["strain"] = "seeded"
+					end
+				end
+			end
+		end
+	elseif status == "new" then
+		crops[#crops+1] = ids
+	end
+end)
+
+
+RegisterNetEvent("weed:giveitems")
+AddEventHandler("weed:giveitems", function(strain)
+
+	if strain == "Seeded" then
+        TriggerEvent( "npc-banned:getID","femaleseed",math.random(1,12))
+		if math.random(100) < 10 then
+	        TriggerEvent( "npc-banned:getID","maleseed",1)
+	    end    
+	else
+		if strain == "Male" then
+			TriggerEvent( "npc-banned:getID","femaleseed",math.random(1,2))
+			TriggerEvent( "npc-banned:getID","weedq",math.random(3,8))
+		else
+
+			Citizen.Wait(500)
+			TriggerEvent( "npc-banned:getID","weedq",math.random(10,25))
+		end
+	end
+end)
+
+
+local inhouse = false
+RegisterNetEvent("inhouse")
+AddEventHandler("inhouse", function(status)
+	inhouse = status
+end)
+
+Citizen.CreateThread( function()
+	local counter = 0
+	while true do 
+		Citizen.Wait(20)
+
+		if not inhouse then
+			Citizen.Wait(3000)
+		else
+			Citizen.Wait(1)
+			local close = 0
+			local dst = 1000.0
+			for i = 1, #crops do
+				local storagedist = #(vector3(crops[i]["x"],crops[i]["y"],crops[i]["z"]) - plyCoords)
+				if storagedist < 80.0 then
+					if storagedist < dst then
+						dst = storagedist
+						close = i
+					end
+					if crops[i]["object"] == nil then
+						createTreeObject(i)
+					elseif crops[i]["object"] then
+						if not DoesEntityExist(crops[i]["object"]) then
+							createTreeObject(i)
+						end					
+					end
+				else
+					if crops[i]["object"] then
+						DeleteObject(crops[i]["object"])
+						crops[i]["object"] = nil
+					end
+				end
+			end
+
+			if counter > 0 then
+				counter = counter - 1
+			end
+			if dst > 80.0 then
+				if counter > 0 or counter < 0 then
+					counter = 0
+				end
+				Citizen.Wait(math.ceil(dst*3))
+			else
+				if #(vector3(crops[close]["x"],crops[close]["y"],crops[close]["z"]-0.3) - plyCoords) < 10.0 then
+					local num = tonumber(crops[close]["status"])
+					DrawText3Ds( crops[close]["x"],crops[close]["y"], crops[close]["z"] , "["..Controlkey["generalUse"][2].."] " .. crops[close]["strain"] .. " Strain  @ " .. crops[close]["growth"] .. "% - " .. cropstatus[num]["info"])
+					if IsControlJustReleased(2, Controlkey["generalUse"][1]) and #(vector3(crops[close]["x"],crops[close]["y"],crops[close]["z"]-0.3) - plyCoords) < 2.0 and counter == 0 then
+						if crops[close]["growth"] > 100 then
+							local finished = exports["npc-taskbar"]:taskBar(1000,"Picking")
+							TriggerEvent("Evidence:StateSet",4,1600)
 							
--- 							TriggerServerEvent("weed:killplant",crops[close]["dbID"])
--- 							TriggerEvent("weed:giveitems",crops[close]["strain"])
--- 						else
--- 							if crops[close]["status"] == 1 then
--- 								TriggerEvent("customNotification","This crop doesnt need any attention.")
--- 							else
--- 								if crops[close]["strain"] == "Seeded" then
--- 									if exports["npc-inventory"]:hasEnoughOfItem("fertilizer",1,false) then
--- 										TriggerEvent("Evidence:StateSet",4,1600)
--- 										if math.random(100) > 85 then
--- 											TriggerEvent("customNotification","You just consumed all the Fertilizer.")
--- 											TriggerEvent("inventory:removeItem", "fertilizer", 1)
--- 										end
--- 										local new = crops[close]["growth"] + math.random(25,45)
--- 										TriggerServerEvent("weed:UpdateWeedGrowth",crops[close]["dbID"],new)
--- 									else
--- 										TriggerEvent("customNotification","You need Fertilizer for this!")
--- 									end
--- 								else
--- 									if exports["npc-inventory"]:hasEnoughOfItem("water",1,false) then
--- 										TriggerEvent("Evidence:StateSet",4,1600)
--- 										TriggerEvent("inventory:removeItem", "water", 1)
--- 										local new = crops[close]["growth"] + math.random(14,17)
--- 										TriggerServerEvent("weed:UpdateWeedGrowth",crops[close]["dbID"],new)
--- 									else
--- 										TriggerEvent("customNotification","You need 1 bottle of water for this!")
--- 									end
--- 								end
--- 							end
--- 						end
--- 						counter = 200
--- 					end
--- 				end
--- 			end
+							TriggerServerEvent("weed:killplant",crops[close]["dbID"])
+							TriggerEvent("weed:giveitems",crops[close]["strain"])
+						else
+							if crops[close]["status"] == 1 then
+								TriggerEvent("customNotification","This crop doesnt need any attention.")
+							else
+								if crops[close]["strain"] == "Seeded" then
+									if exports["npc-inventory"]:hasEnoughOfItem("fertilizer",1,false) then
+										TriggerEvent("Evidence:StateSet",4,1600)
+										if math.random(100) > 85 then
+											TriggerEvent("customNotification","You just consumed all the Fertilizer.")
+											TriggerEvent("inventory:removeItem", "fertilizer", 1)
+										end
+										local new = crops[close]["growth"] + math.random(25,45)
+										TriggerServerEvent("weed:UpdateWeedGrowth",crops[close]["dbID"],new)
+									else
+										TriggerEvent("customNotification","You need Fertilizer for this!")
+									end
+								else
+									if exports["npc-inventory"]:hasEnoughOfItem("water",1,false) then
+										TriggerEvent("Evidence:StateSet",4,1600)
+										TriggerEvent("inventory:removeItem", "water", 1)
+										local new = crops[close]["growth"] + math.random(14,17)
+										TriggerServerEvent("weed:UpdateWeedGrowth",crops[close]["dbID"],new)
+									else
+										TriggerEvent("customNotification","You need 1 bottle of water for this!")
+									end
+								end
+							end
+						end
+						counter = 200
+					end
+				end
+			end
 
--- 		end
--- 	end
--- end)
+		end
+	end
+end)
+
+Citizen.CreateThread(function()
+	while true do
+		Citizen.Wait(6)
+		local storagedist = PlayerPedId()
+		local x,y,z = 955.81, -958.27, 40.2
+		local drawtext = " [E] To Access Materials"
+		local rank = exports['isPed']:GroupRank('tuner_carshop')
+		local job = exports["isPed"]:isPed("job")
+		local plyCoords = GetEntityCoords(storagedist)
+		local distance = GetDistanceBetweenCoords(plyCoords.x,plyCoords.y,plyCoords.z,x,y,z,false)
+		if distance <= 1.2 then
+			DrawText3Ds(x,y,z, drawtext) 
+			if IsControlJustReleased(0, 38) then
+			if currentStorage == "tuner_carshop" and rank > 0 or job == "Police" or job == "DOJ" then
+			elseif currentStorage ~= "tuner_carshop" and rank > 0 or job == "Police" or job == "DOJ" then
+			else
+				TriggerEvent("DoLongHudText","You dont have permission to use this.")
+				end
+			end
+		end
+	end
+end)--]]
+
+function DrawText3D(x,y,z, text)
+    local onScreen,_x,_y=World3dToScreen2d(x,y,z)
+    local px,py,pz=table.unpack(GetGameplayCamCoords())
+    SetTextScale(0.35, 0.35)
+    SetTextFont(4)
+    SetTextProportional(1)
+    SetTextColour(255, 255, 255, 215)
+    SetTextEntry("STRING")
+    SetTextCentre(1)
+    AddTextComponentString(text)
+    DrawText(_x,_y)
+    local factor = (string.len(text)) / 370
+    DrawRect(_x,_y+0.0125, 0.015+ factor, 0.03, 41, 11, 41, 68)
+end
+
+
+RegisterNetEvent('tuner:crafting')
+AddEventHandler('tuner:crafting', function()
+	local job = exports['isPed']:isPed('job')
+	if job == 'tuner_carshop' or job == 'tuner_shop' then
+	end
+end)
+
+RegisterNetEvent('tuner:materials')
+AddEventHandler('tuner:materials', function()
+	local job = exports['isPed']:isPed('job')
+	if job == 'tuner_carshop' or job == 'tuner_shop' then
+	end
+end)
+
+RegisterNetEvent('tuner:stash')
+AddEventHandler('tuner:stash', function()
+	local rank = exports["isPed"]:GroupRank("tuner_carshop")
+	if rank > 2 then
+	end
+end)
+
+RegisterNetEvent('tuner:stash2')
+AddEventHandler('tuner:stash2', function()
+	local rank = exports["isPed"]:GroupRank("tuner_carshop")
+	if rank > 2 then
+	end
+end)
+
+RegisterNetEvent('drift:stash')
+AddEventHandler('drift:stash', function()
+	local rank = exports["isPed"]:GroupRank("DriftSchool")
+	if rank > 0 then
+	end
+end)
+
+RegisterNetEvent('trade:in')
+AddEventHandler('trade:in', function()
+	if exports['npc-inventory']:hasEnoughOfItem('goldbar', 100) then
+		TriggerEvent('inventory:removeItem', "goldbar", 100)
+		FreezeEntityPosition(PlayerPedId(), true)
+		exports['npc-taskbar']:taskBar(60000, 'Trading Gold Bars!')
+		FreezeEntityPosition(PlayerPedId(), false)
+		TriggerServerEvent('trade:pay', math.random(35000, 45000))
+	end
+end)
+
+
+RegisterNetEvent('pillbox:floor')
+AddEventHandler('pillbox:floor', function()
+	local Getmecuh = PlayerPedId()
+	DoScreenFadeOut(400)
+	Citizen.Wait(500)
+	SetEntityCoords(Getmecuh, 338.60, -583.87, 74.16)
+	Citizen.Wait(250)
+	DoScreenFadeIn(250)
+end)
+
+RegisterNetEvent('pillbox:roof')
+AddEventHandler('pillbox:roof', function()
+	local Getmecuh = PlayerPedId()
+	DoScreenFadeOut(400)
+	Citizen.Wait(500)
+	SetEntityCoords(Getmecuh, 332.89, -569.17, 42.9)
+	Citizen.Wait(250)
+	DoScreenFadeIn(250)
+end)
