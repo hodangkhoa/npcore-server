@@ -31,6 +31,7 @@ client_scripts {
 	"client/vehiclemods.lua",
 	"client/lifetraffic.net.dll",
 	"client/koil-debug.lua",
+	"client/cctv.lua",
 	"@PolyZone/client.lua",
 	"@npc-warmenu/warmenu.lua",
 	"@npc-scripts/errorlog.lua",
