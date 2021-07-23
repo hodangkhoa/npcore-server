@@ -1,14 +1,15 @@
 RegisterServerEvent('cunt:pay')
 AddEventHandler('cunt:pay', function(money)
     local source = source
-    local LocalPlayer = exports['npc-base']:getModule('LocalPlayer')
+    local LocalPlayer = exports['urp-base']:getModule('LocalPlayer')
     if money ~= nil then
+       TriggerClientEvent('urp-ac:checkforban', source, money)
        TriggerClientEvent('DoLongHudText', source, 'You got $'.. money .. ' for 2 chicken', 1)
     end
 end)
 
-RegisterServerEvent('npc-chickenjob:reward')
-AddEventHandler('npc-chickenjob:reward', function()
+RegisterServerEvent('urp-chickenjob:reward')
+AddEventHandler('urp-chickenjob:reward', function()
 end)
 
 RegisterServerEvent('NPC-Armour:Server:RefreshCurrentArmour')
