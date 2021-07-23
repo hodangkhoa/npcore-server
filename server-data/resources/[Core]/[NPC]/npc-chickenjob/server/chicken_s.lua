@@ -1,7 +1,7 @@
 RegisterServerEvent('cunt:pay')
 AddEventHandler('cunt:pay', function(money)
     local source = source
-    local LocalPlayer = exports['npc-base']:getModule('LocalPlayer')
+    local LocalPlayer = exports['npc-core']:getModule('LocalPlayer')
     if money ~= nil then
        TriggerClientEvent('DoLongHudText', source, 'You got $'.. money .. ' for 2 chicken', 1)
     end
