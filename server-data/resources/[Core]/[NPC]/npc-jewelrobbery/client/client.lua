@@ -1,205 +1,306 @@
-local PlayerData = {}
-local bomba, seguridad = false, true
-local timer = GetGameTimer()
-local stand = {
-	{x = -627.23, y = -234.98, z = 38.52, abierto = false},
-	{x = -627.67, y = -234.35, z = 38.52, abierto = false},
-	{x = -626.53, y = -233.52, z = 38.52, abierto = false},
-	{x = -626.09, y = -234.15, z = 38.52, abierto = false},
-	{x = -625.27, y = -238.31, z = 38.52, abierto = false},
-	{x = -626.26, y = -239.03, z = 38.52, abierto = false},
-	{x = -623.98, y = -230.73, z = 38.52, abierto = false},
-	{x = -622.50, y = -232.60, z = 38.52, abierto = false},
-	{x = -619.87, y = -234.82, z = 38.05, abierto = false},
-	{x = -618.79, y = -234.05, z = 38.05, abierto = false},
-	{x = -617.11, y = -230.20, z = 38.05, abierto = false},
-	{x = -617.87, y = -229.15, z = 38.05, abierto = false},
-	{x = -619.16, y = -227.18, z = 38.05, abierto = false},
-	{x = -619.99, y = -226.15, z = 38.05, abierto = false},
-	{x = -625.25, y = -227.24, z = 38.05, abierto = false},
-	{x = -624.27, y = -226.64, z = 38.05, abierto = false},
-	{x = -623.58, y = -228.57, z = 38.05, abierto = false},
-	{x = -621.48, y = -228.84, z = 38.05, abierto = false},
-	{x = -620.17, y = -230.90, z = 38.05, abierto = false},
-	{x = -620.60, y = -232.90, z = 38.05, abierto = false}
-}
+local leftdoor, rightdoor		= nil, nil
+local HasAlreadyEnteredArea 	= false
+local IsAbleToRob				= false
+local policeclosed				= false
+local IsBusy, HasNotified		= false, false
+local CopsOnline 				= 0
+local shockingevent 			= false
+job = nil
 
-Citizen.CreateThread(function ()
-	while true do	
-		local w = 500
-		local p = PlayerPedId()
-		local c = GetEntityCoords(p)
-		local b = false
-		if not seguridad then
-			w = 5
-			for i = 1, #stand do
-				local s = stand[i]
-				if GetDistanceBetweenCoords(c, s.x, s.y, s.z, true) < 1 and not s.abierto then 				
-					DrawText3D(s.x, s.y, s.z,Config.Lang['break'])
-					if GetDistanceBetweenCoords(c, s.x, s.y, s.z, true) < 1 then
-						if IsControlJustPressed(0, 38) then				
-							if IsPedArmed(PlayerPedId(), 4) then
-								s.abierto = true 
-								PlaySoundFromCoord(-1, "Glass_Smash", s.x, s.y, s.z, "", 0, 0, 0)
-								if not HasNamedPtfxAssetLoaded("scr_jewelheist") then
-								RequestNamedPtfxAsset("scr_jewelheist")
-								end
-								while not HasNamedPtfxAssetLoaded("scr_jewelheist") do
-								Citizen.Wait(0)
-								end
-								SetPtfxAssetNextCall("scr_jewelheist")
-								StartParticleFxLoopedAtCoord("scr_jewel_cab_smash", s.x, s.y, s.z, 0.0, 0.0, 0.0, 1.0, false, false, false, false)
-								anim("missheist_jewel") 
-								TaskPlayAnim(p, "missheist_jewel", "smash_case", 8.0, 1.0, -1, 2, 0, 0, 0, 0 ) 
-								Citizen.Wait(5000)
-								ClearPedTasksImmediately(p)
-								TriggerServerEvent('npc-jewelrobbery:AwardItems')
-							else
-								TriggerEvent('DoLongHudText', 'You are missing a weapon!', 2)							
-							end
-						end
-					end
-				end
-			end
-			if GetGameTimer() - timer > Config.RobTime * 1000 * 60 then
-				seguridad = true
-				bomba = false
-			end
-		else
-			w = 3000
-		end
-		Citizen.Wait(w)
+Citizen.CreateThread(function()
+	while true do
+		Citizen.Wait(5000)
+		job = exports['isPed']:isPed('job')
+		TriggerServerEvent('npc-jewelrob:getjob', job)
 	end
 end)
 
-RegisterNetEvent('av_vangelico:bomba')
-AddEventHandler('av_vangelico:bomba', function()
-	local p = PlayerPedId()
-	RequestAnimDict('anim@heists@ornate_bank@thermal_charge')
-		if HasAnimDictLoaded('anim@heists@ornate_bank@thermal_charge') then
-			SetEntityCoords(PlayerPedId(), -636.23840332031, -214.1, 52.6)
-			SetEntityHeading(PlayerPedId(), 32.896125793457)
-			FreezeEntityPosition(PlayerPedId(),true)
-            local fwd, _, _, pos = GetEntityMatrix(p)
-            local np = (fwd * 0.8) + pos            
-            SetEntityCoords(p, np.xy, np.z - 1)
-            local rot, pos = GetEntityRotation(p), GetEntityCoords(p)
-            SetPedComponentVariation(p, 5, -1, 0, 0)
-            local b = CreateObject(GetHashKey("hei_p_m_bag_var22_arm_s"), pos.x, pos.y, pos.z,  true,  true, false)
-            local sc = NetworkCreateSynchronisedScene(pos.x, pos.y, pos.z, rot.x, rot.y, rot.z, 2, 0, 0, 1065353216, 0, 1.3)
-            SetEntityCollision(b, 0, 1)
-            NetworkAddPedToSynchronisedScene(p, sc, "anim@heists@ornate_bank@thermal_charge", "thermal_charge", 1.5, -4.0, 1, 16, 1148846080, 0)
-            NetworkAddEntityToSynchronisedScene(b, sc, "anim@heists@ornate_bank@thermal_charge", "bag_thermal_charge", 4.0, -8.0, 1)
-            NetworkStartSynchronisedScene(sc)
-            Citizen.Wait(1500)
-            pos = GetEntityCoords(p)
-            prop = CreateObject(GetHashKey("hei_prop_heist_thermite"), pos.x, pos.y, pos.z + 0.2, 1, 1, 1)
-            SetEntityCollision(prop, 0, 1)
-            AttachEntityToEntity(prop, p, GetPedBoneIndex(p, 28422), 0, 0, 0, 0, 0, 180.0, 1, 1, 0, 1, 1, 1)
-            Citizen.Wait(4000)
-			DeleteObject(b)
-            SetPedComponentVariation(p, 5, 45, 0, 0)
-            DetachEntity(prop, 1, 1)
-            FreezeEntityPosition(prop, 1)
-            SetEntityCollision(prop, 0, 1)
-            pCoords = GetEntityCoords(prop)
-            TriggerServerEvent('av_vangelico:efecto', prop)
-			Citizen.Wait(4000)
-			NetworkStopSynchronisedScene(sc)
-			DeleteObject(prop)
-			seguridad = false
-			FreezeEntityPosition(PlayerPedId(),false)
-			TriggerServerEvent("npc-doors:alterlockstate", 23)
-			TriggerServerEvent("npc-doors:alterlockstate", 24)
-			TriggerEvent('DoLongHudText', 'You started the robbery', 2)
-			TriggerEvent("npc-dispatch:jewelrobbery")
-			TriggerServerEvent('av_vangelico:gas')
-			TriggerServerEvent('jewelrobbery:log')
-		end
+RegisterNetEvent('npc-jewelrobbery:policeclosure')
+AddEventHandler('npc-jewelrobbery:policeclosure', function()
+	policeclosed = true
+	storeclosed = false
+	IsAbleToRob = false
 end)
 
-RegisterNetEvent('av_vangelico:bombaFx')
-AddEventHandler('av_vangelico:bombaFx', function(entity)
-	RequestNamedPtfxAsset('scr_ornate_heist')
-		if HasNamedPtfxAssetLoaded('scr_ornate_heist') then
-			SetPtfxAssetNextCall("scr_ornate_heist")
-            explosiveEffect = StartParticleFxLoopedOnEntity("scr_heist_ornate_thermal_burn", entity, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 2.0, 0, 0, 0, 0)
-			Citizen.Wait(4000)
-			StopParticleFxLooped(explosiveEffect, 0)
+RegisterNetEvent('npc-jewelrobbery:resetcases')
+AddEventHandler('npc-jewelrobbery:resetcases', function(list)
+	if GetDistanceBetweenCoords(GetEntityCoords(GetPlayerPed(-1)), -622.2496, -230.8000, 38.05705, true)  < 20.0  then
+		for i, v in pairs(Config.CaseLocations) do
+			if v.Broken then
+				RemoveModelSwap(v.Pos.x, v.Pos.y, v.Pos.z, 0.1, GetHashKey(v.Prop1), GetHashKey(v.Prop), false )
+			end
 		end
+	end
+	Config.CaseLocations = list
+	HasNotified = false
+	policeclosed = false
+	storeclosed = false
+	IsAbleToRob = false
+	HasAlreadyEnteredArea = false
 end)
 
-RegisterNetEvent('av_vangelico:humo')
-AddEventHandler('av_vangelico:humo', function()
-	if #(GetEntityCoords(PlayerPedId()) - vector3(-632.39, -238.26, 38.07)) < 300 then
-		local cuenta = 0
-		RequestNamedPtfxAsset('core')
-		while not HasNamedPtfxAssetLoaded('core') do
-			Citizen.Wait(1)
-		end
-		while true do 
-			cuenta = cuenta + 1			
-			if cuenta == Config.GasTime * 15 then break end		
-			UseParticleFxAssetNextCall('core')
-			StartParticleFxLoopedAtCoord("veh_respray_smoke", -621.85, -230.71, 38.05, 0.0, 0.0, 0.0, 4.0, false, false, false, 0)	
-			Citizen.Wait(4000)		
+
+
+RegisterNetEvent('npc-jewelrobbery:setcase')
+AddEventHandler('npc-jewelrobbery:setcase', function(casenumber, switch)
+	Config.CaseLocations[casenumber].Broken = switch
+	HasAlreadyEnteredArea = false
+end)
+
+
+Citizen.CreateThread(function()
+	while true do
+		Citizen.Wait(3000)
+		local playerCoords = GetEntityCoords(PlayerPedId())
+		local currentStreetHash, intersectStreetHash = GetStreetNameAtCoord(playerCoords.x, playerCoords.y, playerCoords.z, currentStreetHash, intersectStreetHash)
+		currentStreetName = GetStreetNameFromHashKey(currentStreetHash)
+		intersectStreetName = GetStreetNameFromHashKey(intersectStreetHash)
+	end
+end)
+
+
+RegisterNetEvent('npc-jewelrobbery:loadconfig')
+AddEventHandler('npc-jewelrobbery:loadconfig', function(casestatus)
+	while not DoesEntityExist(GetPlayerPed(-1)) do
+		Citizen.Wait(100)
+	end
+	Config.CaseLocations = casestatus
+	if GetDistanceBetweenCoords(plyloc, -622.2496, -230.8000, 38.05705, true)  < 20.0 then
+		for i, v in pairs(Config.CaseLocations) do
+			if v.Broken then
+				CreateModelSwap(v.Pos.x, v.Pos.y, v.Pos.z, 0.1, GetHashKey(v.Prop1), GetHashKey(v.Prop), false )
+			end
 		end
 	end
 end)
 
 
-function anim(dict)  
-    while (not HasAnimDictLoaded(dict)) do
-        RequestAnimDict(dict)
-        Citizen.Wait(5)
-    end
+RegisterNetEvent('npc-jewelrobbery:playsound')
+AddEventHandler('npc-jewelrobbery:playsound', function(x,y,z, soundtype)
+	ply = GetPlayerPed(-1)
+	plyloc = GetEntityCoords(ply)
+	if GetDistanceBetweenCoords(plyloc,x,y,z,true) < 20.0 then
+		if soundtype == 'break' then
+			PlaySoundFromCoord(-1, "Glass_Smash", x,y,z, 0, 0, 0)
+		elseif soundtype == 'nonbreak' then
+			PlaySoundFromCoord(-1, "Drill_Pin_Break", x,y,z, "DLC_HEIST_FLEECA_SOUNDSET", 0, 0, 0)
+		end
+	end
+end)
+
+
+AddEventHandler('npc-jewelrobbery:EnteredArea', function()
+	for i, v in pairs(Config.CaseLocations) do
+		if v.Broken then
+			CreateModelSwap(v.Pos.x, v.Pos.y, v.Pos.z, 0.1, GetHashKey(v.Prop1), GetHashKey(v.Prop), false )
+		end
+	end
+end)
+
+AddEventHandler('npc-jewelrobbery:LeftArea', function()
+	for i, v in pairs(Config.CaseLocations) do
+		if v.Broken then
+			RemoveModelSwap(v.Pos.x, v.Pos.y, v.Pos.z, 0.1, GetHashKey(v.Prop1), GetHashKey(v.Prop), false )
+		end
+	end
+end)
+
+function UnAuthJob()
+	local UnAuthjob = false
+	for i,v in pairs(Config.UnAuthJobs) do
+		if job == v then
+			UnAuthjob = true
+			break
+		end
+	end
+
+	return UnAuthjob
 end
 
-function hasWeapon(weapon)	
-	for i = 1, #Config.Weapons do
-		if weapon == Config.Weapons[i] then
-			return true
-		end
-	end
-	return false
-end
-
-function DrawText3D(x, y, z, text)
-	SetTextScale(0.35, 0.35)
+function DrawText3Ds(x,y,z, text)
+    local onScreen,_x,_y=World3dToScreen2d(x,y,z)
+    local px,py,pz=table.unpack(GetGameplayCamCoords())
+    
+    SetTextScale(0.35, 0.35)
     SetTextFont(4)
     SetTextProportional(1)
     SetTextColour(255, 255, 255, 215)
     SetTextEntry("STRING")
-    SetTextCentre(true)
+    SetTextCentre(1)
     AddTextComponentString(text)
-    SetDrawOrigin(x,y,z, 0)
-    DrawText(0.0, 0.0)
+    DrawText(_x,_y)
     local factor = (string.len(text)) / 370
-    DrawRect(0.0, 0.0+0.0125, 0.017+ factor, 0.03, 0, 0, 0, 75)
-    ClearDrawOrigin()
+    DrawRect(_x,_y+0.0125, 0.015+ factor, 0.03, 41, 11, 41, 68)
 end
 
-RegisterNetEvent('jewel:thermite')
-AddEventHandler('jewel:thermite', function()
-	if exports["isPed"]:isPed("countpolice") >= 4 then
-		local thermite = exports["npc-inventory"]:hasEnoughOfItem("thermite",1,false)
-		if thermite then
-			TriggerEvent("inventory:removeItem","thermite", 1)   
-			if exports['npc-thermite']:startGame(25,1,13,500) then
-				seguridad = true
-				bomba = true
-				TriggerEvent('av_vangelico:bomba')
-			else
-				local coords = GetEntityCoords(PlayerPedId())
-				FreezeEntityPosition(PlayerPedId(), false)
-				Citizen.Wait(1000)
-				exports['npc-thermite']:startFireAtLocation(coords.x, coords.y, coords.z - 1, 15000)
-				TriggerEvent('DoLongHudText', 'Washed!', 2)
-			end
-		else
-			TriggerEvent('DoLongHudText', 'You Dont Have The Correct Supplies!', 2)
+
+Citizen.CreateThread( function()
+	while true do 
+		ply = GetPlayerPed(-1)
+		plyloc = GetEntityCoords(ply)
+		IsInArea = false
+		
+		if GetDistanceBetweenCoords(plyloc, -622.2496, -230.8000, 38.05705, true)  < 20.0 then
+			IsInArea = true
 		end
-	else
-		TriggerEvent('DoLongHudText', 'Aint enough cops on the streets playa', 2)
+		
+		if IsInArea and not HasAlreadyEnteredArea then
+			TriggerEvent('npc-jewelrobbery:EnteredArea')
+			shockingevent = false
+			if Config.Closed and not (CheckPolice() >= Config.MinPolice) and not policeclosed then
+				leftdoor = GetClosestObjectOfType(-631.9554, -236.3333, 38.20653, 11.0, GetHashKey("p_jewel_door_l"), false, false, false)
+				rightdoor = GetClosestObjectOfType(-631.9554, -236.3333, 38.20653, 11.0, GetHashKey("p_jewel_door_r1"), false, false, false)			
+				ClearAreaOfPeds(-622.2496, -230.8000, 38.05705, 10.0, 1)
+				storeclosed = true
+				HasNotified = false
+			else
+				leftdoor = GetClosestObjectOfType(-631.9554, -236.3333, 38.20653, 11.0, GetHashKey("p_jewel_door_l"), false, false, false)
+				rightdoor = GetClosestObjectOfType(-631.9554, -236.3333, 38.20653, 11.0, GetHashKey("p_jewel_door_r1"), false, false, false)			
+				storeclosed = false
+				Citizen.Wait(100)
+				freezedoors(false)
+				IsAbleToRob = true
+			
+			end
+			HasAlreadyEnteredArea = true
+		end
+
+		if not IsInArea and HasAlreadyEnteredArea then
+			TriggerEvent('npc-jewelrobbery:LeftArea')
+			HasAlreadyEnteredArea = false
+			shockingevent = false
+			IsAbleToRob = false
+			storeclosed = false
+			HasNotified = false
+		end
+		
+		if Config.Closed and not (CheckPolice() >= Config.MinPolice) and not storeclosed and not policeclosed then
+			Citizen.Wait(1250)
+		else
+			Citizen.Wait(3250)
+		end
 	end
 end)
+
+function CheckPolice()
+	if CopsOnline ~= exports['isPed']:isPed('curPolice') then
+		HasAlreadyEnteredArea = false
+	end
+	CopsOnline = exports['isPed']:isPed('curPolice')
+	return exports['isPed']:isPed('curPolice')
+end
+
+function freezedoors(status)
+	FreezeEntityPosition(leftdoor, status)
+	FreezeEntityPosition(rightdoor, status)
+end
+
+
+Citizen.CreateThread( function()
+	while true do 
+		sleep = 1500
+		while IsAbleToRob and not UnAuthJob() and (CheckPolice() >= Config.MinPolice) do
+			Citizen.Wait(0)
+			sleep = 0
+			ply = GetPlayerPed(-1)
+			plyloc = GetEntityCoords(ply)
+			for i, v in pairs(Config.CaseLocations) do
+				if GetDistanceBetweenCoords(plyloc, v.Pos.x, v.Pos.y, v.Pos.z, true) < 1.0  and not v.Broken and not IsBusy then
+					local robalbe = false
+					local _, weaponname = GetCurrentPedWeapon(ply)
+					for index, weapon in pairs (Config.AllowedWeapons) do
+						if GetHashKey(weapon.name) == weaponname then
+							robalbe = weapon
+							break 
+						end
+					end
+					if robalbe then	
+						DrawText3Ds(v.Pos.x, v.Pos.y, v.Pos.z + 0.5, 'Press ~g~E~w~ to Break')
+						if IsControlJustPressed(0, 38) and not IsBusy and not IsPedWalking(ply) and not IsPedRunning(ply) and not IsPedSprinting(ply) then
+							local policenotify = math.random(1,100)
+							if not shockingevent  then
+								AddShockingEventAtPosition(99, v.Pos.x, v.Pos.y, v.Pos.z,25.0)
+								shockingevent = true
+							end
+							IsBusy = true				
+							TaskTurnPedToFaceCoord(ply, v.Pos.x, v.Pos.y, v.Pos.z, 1250)
+							Citizen.Wait(1250)
+							if not HasAnimDictLoaded("missheist_jewel") then
+								RequestAnimDict("missheist_jewel") 
+							end
+							while not HasAnimDictLoaded("missheist_jewel") do 
+							Citizen.Wait(0)
+							end
+							TaskPlayAnim(ply, 'missheist_jewel', 'smash_case', 1.0, -1.0,-1,1,0,0, 0,0)
+							local breakchance = math.random(1, 100)
+							if breakchance <= robalbe.chance then
+								if policenotify <= Config.PoliceNotifyBroken and not HasNotified then
+									local playerCoords = GetEntityCoords(PlayerPedId())
+									TriggerEvent('npc-dispatch:jewelrobbery')
+									HasNotified = true
+								end
+								Citizen.Wait(2100)
+								TriggerServerEvent('npc-jewelrobbery:playsound', v.Pos.x, v.Pos.y, v.Pos.z, 'break')
+								CreateModelSwap(v.Pos.x, v.Pos.y, v.Pos.z,  0.1, GetHashKey(v.Prop1), GetHashKey(v.Prop), false )
+								ClearPedTasksImmediately(ply)
+								TriggerServerEvent("npc-jewelrobbery:setcase", i, true)	
+							else
+								Citizen.Wait(2100)
+								TriggerServerEvent('npc-jewelrobbery:playsound', v.Pos.x, v.Pos.y, v.Pos.z, 'nonbreak')
+								ClearPedTasksImmediately(ply)
+								if policenotify <= Config.PoliceNotifyNonBroken and not HasNotified then
+									local playerCoords = GetEntityCoords(PlayerPedId())
+									TriggerEvent('npc-dispatch:jewelrobbery')
+									HasNotified = true
+								end
+							end	
+							Citizen.Wait(1250)
+							IsBusy = false			
+						end
+					end
+				end
+			end
+		end
+		Citizen.Wait(sleep)
+	end
+end)
+
+Citizen.CreateThread(function()
+    Wait(900)
+    while true do 
+        local player = GetEntityCoords(PlayerPedId())
+        local distance = #(vector3(-596.47, -283.96, 50.33) - player)
+        if distance < 3.0 then
+        	Wait(1)
+             DrawMarker(27,-596.47, -283.96, 50.33, 0, 0, 0, 0, 0, 0, 0.60, 0.60, 0.3, 11, 111, 11, 60, 0, 0, 2, 0, 0, 0, 0) 
+             DT(-596.47, -283.96, 50.33, "[E] Use Black G6 Card")
+			 if IsControlJustReleased(0,38) and distance < 1.0 then
+				if CheckPolice() >= Config.MinPolice then
+             		if exports["npc-inventory"]:hasEnoughOfItem("Gruppe6Card",1,false) then
+						TriggerEvent("inventory:removeItem", "Gruppe6Card", 1)
+						TriggerServerEvent("npc-doors:alterlockstate",61,false)
+						TriggerServerEvent("npc-doors:alterlockstate",62,false)
+					 end
+             	end
+             end
+		else
+            Wait(3000)
+        end        
+    end
+end)
+
+function DT(x,y,z,text)
+    local onScreen,_x,_y=World3dToScreen2d(x,y,z)
+    local px,py,pz=table.unpack(GetGameplayCamCoords())
+    SetTextScale(0.35, 0.35)
+    SetTextFont(4)
+    SetTextProportional(1)
+    SetTextColour(255, 255, 255, 215)
+
+    SetTextEntry("STRING")
+    SetTextCentre(1)
+    AddTextComponentString(text)
+    DrawText(_x,_y)
+    local factor = (string.len(text)) / 370
+    DrawRect(_x,_y+0.0125, 0.015+ factor, 0.03, 41, 11, 41, 68)
+end
