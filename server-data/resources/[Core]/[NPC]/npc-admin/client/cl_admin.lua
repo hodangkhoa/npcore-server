@@ -68,6 +68,59 @@ AddEventHandler("npc-admin:sendPlayerInfo", function(data, discData)
     NPC._Admin.DiscPlayers = discData
 end)
 
+function NPC.Admin.BeginAFK(self, stop)
+    if stop then
+        afk.isAfk = false
+        afk.msgAFK = false
+        afk.stringToType = ""
+        afk.afkStart = nil
+        afk.posStart = nil
+        URP.Admin:SetStatus("Playing")
+        if afk.event then
+            RemoveEventHandler(afk.event)
+        end
+        return
+    end
+
+    if afk.msgAFK then return end
+
+    self:SetStatus("AFK")
+    afk.stringToType = ""
+
+    for i = 1, 5 do
+        local c = string.char(GetRandomIntInRange(97, 122))
+        afk.stringToType = afk.stringToType .. string.lower(c)
+    end
+
+    afk.event = AddEventHandler("npc-admin:afkStringCheck", function(text)
+        if string.lower(text) == afk.stringToType then NPC.Admin:BeginAFK(true) return end
+    end)
+
+    afk.msgAFK = true
+    local beginTime = GetGameTimer()
+
+    Citizen.CreateThread(function()
+        local lastNotify = 0
+
+        while true do
+            Citizen.Wait(1000)
+
+            if not afk.msgAFK then return end
+
+            local curTime = GetGameTimer()
+
+            if curTime - lastNotify >= 6500 then
+                lastNotify = GetGameTimer()
+
+                local string = [[<center><span style="font-size:28px;color:red;">You have been detected as AFK. Please type the message below within 5 minutes!<br /><hr style="border-color: rgba(255, 0, 0, 0.5);">%s</span></center>]]
+                TriggerEvent("pNotify:SendNotification", {text = string.format(string, afk.stringToType), layout = "top", timeout = 5000, type = "error", animation = {open = "gta_effects_fade_in", close = "gta_effects_fade_out"}, queue = "afk", progressBar = false})
+            end
+
+            if curTime - beginTime >= 300000 then TriggerServerEvent("npc-admin:Disconnect", "AFK Kick") return end
+        end
+    end)
+end
+
 RegisterNetEvent("npc-admin:RemovePlayer")
 AddEventHandler("npc-admin:RemovePlayer", function(src)
     local data = NPC._Admin.Players[src]
@@ -157,12 +210,12 @@ function NPC.Admin.split(source, sep)
         local a, b = source:find(sep)
         if not a then break end
         local candidat = source:sub(1, a - 1)
-        if candidat ~= "" then 
+        if candidat ~= "" then
             result[i] = candidat
         end i=i+1
         source = source:sub(b + 1)
     end
-    if source ~= "" then 
+    if source ~= "" then
         result[i] = source
     end
     return result
@@ -179,10 +232,10 @@ function NPC.Admin.RunNclp(self,bool)
     local rankData = NPC.Admin:GetRankData(rank)
 
     if rankData and rankData.grant < 90 then return end
-    
+
     if bool and isInNoclip then return end
     isInNoclip = bool
-    
+
     TriggerEvent("npc-admin:noClipToggle", isInNoclip)
 end
 
@@ -207,14 +260,14 @@ RegisterNetEvent("npc-admin:updateData")
 AddEventHandler("npc-admin:updateData", function(src, type, data)
     if not src or not type or not data then return end
     if not NPC._Admin.Players[src] then return end
-    
+
     NPC._Admin.Players[src][type] = data
 end)
 
 RegisterNetEvent("npc-admin:noLongerAdmin")
 AddEventHandler("npc-admin:noLongerAdmin", function()
     NPC._Admin.Players = {}
-    
+
     for k,v in pairs(NPC._Admin.Menu.Menus) do
         if WarMenu.IsMenuOpened(k) then WarMenu.CloseMenu() end
     end
@@ -237,7 +290,7 @@ AddEventHandler("npc-admin:bringPlayer", function(targPos)
 
         FreezeEntityPosition(PlayerPedId(), false)
         SetPlayerInvincible(PlayerId(), false)
-    end)    
+    end)
 end)
 
 local LastVehicle = nil
@@ -249,7 +302,7 @@ AddEventHandler("npc-admin:runSpawnCommand", function(model, livery)
 
         if not IsModelAVehicle(hash) then return end
         if not IsModelInCdimage(hash) or not IsModelValid(hash) then return end
-        
+
         RequestModel(hash)
 
         while not HasModelLoaded(hash) do
@@ -273,7 +326,7 @@ AddEventHandler("npc-admin:runSpawnCommand", function(model, livery)
         TriggerEvent("keys:addNew",vehicle,plate)
         TriggerServerEvent('garages:addJobPlate', plate)
         SetModelAsNoLongerNeeded(hash)
-        
+
         SetVehicleDirtLevel(vehicle, 0)
         SetVehicleWindowTint(vehicle, 0)
 
@@ -325,18 +378,18 @@ AddEventHandler("npc-admin:ReviveInDistance", function()
 
         for k,v in pairs(playerList) do
              TriggerServerEvent("reviveGranted", v)
-             TriggerEvent("Hospital:HealInjuries",true) 
+             TriggerEvent("Hospital:HealInjuries",true)
              TriggerServerEvent("ems:healplayer", v)
              TriggerEvent("heal")
         end
     end
-    
+
 end)
 
 RegisterNetEvent('admin:RegetGroup')
 AddEventHandler('admin:RegetGroup', function()
     NPC.Admin:GetPlayerRank()
-end) 
+end)
 
 RegisterNetEvent("npc-admin:bringPlayer")
 AddEventHandler("npc-admin:bringPlayer", function(targPos)
@@ -355,7 +408,7 @@ AddEventHandler("npc-admin:bringPlayer", function(targPos)
 
         FreezeEntityPosition(PlayerPedId(), false)
         SetPlayerInvincible(PlayerId(), false)
-    end)    
+    end)
 end)
 
 function DrawPlayerInfo(target)
@@ -404,7 +457,7 @@ AddEventHandler("admin:attach", function(tSrc, toggle)
         x,y,z = PlayerPos.x, PlayerPos.y, PlayerPos.z
     end
     Citizen.CreateThread(function()
-        if toggle == true then 
+        if toggle == true then
             called = true
             Citizen.Wait(300)
             if TargetC ~= nil then
@@ -418,14 +471,14 @@ AddEventHandler("admin:attach", function(tSrc, toggle)
                     if GetGameTimer() - startedCollision > 5000 then break end
                     Citizen.Wait(0)
                 end
-    
+
                 Citizen.Wait(500)
                 SetEntityVisible(ped, false)
                 SetPlayerInvincible(ped, true)
                 SetEntityCollision(ped,false,false)
                 local targId = GetPlayerFromServerId(tSrc)
                 local targPed = GetPlayerPed(targId)
-                
+
                 DrawPlayerInfo(targId)
                 AttachEntityToEntity(ped, targPed, 11816, 0.0, -1.48, 2.0, 0.0, 0.0, 0.0, false, false, false, false, 2, true)
             else
@@ -441,7 +494,7 @@ AddEventHandler("admin:attach", function(tSrc, toggle)
             StopDrawPlayerInfo()
             SetEntityCoords(ped, x,y,z)
         end
-    end)    
+    end)
 end)
 
 RegisterNetEvent("admin:sendCoords")
