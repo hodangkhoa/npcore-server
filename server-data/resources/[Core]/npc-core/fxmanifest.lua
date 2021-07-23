@@ -29,6 +29,7 @@ client_script "core/sh_enums.lua"
 client_script "core/sh_util.lua"
 client_script "core/cl_util.lua"
 client_script "core/cl_core.lua"
+client_script "core/cl_entitys.lua"
 
 --[[=====SPAWNMANAGER=====]]--
 client_script "client/cl_spawnmanager.lua"
