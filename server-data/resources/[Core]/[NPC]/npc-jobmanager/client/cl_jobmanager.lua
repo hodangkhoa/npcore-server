@@ -45,6 +45,14 @@ AddEventHandler("npc-jobmanager:playerBecameJob", function(job, name, notify)
     if job == "burger_shot"  then
         TriggerEvent('DoLongHudText',"Go Sell Some Food!",1)
     end
+		
+    if job == "tuner_shop"  then
+        TriggerEvent('DoLongHudText',"Fix some cars!",1)
+    end
+
+    if job == "auto_bodies"  then
+        TriggerEvent('DoLongHudText',"Fix some cars!",1)
+    end
     
    -- TriggerServerEvent("npc-items:updateID",job,exports["isPed"]:retreiveBusinesses())
 end)
