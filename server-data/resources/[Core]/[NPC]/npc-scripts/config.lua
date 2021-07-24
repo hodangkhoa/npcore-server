@@ -24,7 +24,7 @@ Config.nogrip = true -- When jumping and running, there is an 90% chance of fall
 -- Note: These commands will not work if rpcommands is set to false.
 -- Enable or disable commands
 -- Set to false to disable
-Config.twitter = true -- /twt command?
+Config.twitter = false -- /twt command?
 Config.dispatch = true -- /dispatch command?
 Config.darkweb = true -- /darkweb command?
 Config.news = true -- /news command?
