@@ -7,6 +7,6 @@ version '1.0.0'
 
 client_script "@npc-scripts/client/errorlog.lua"
 
-client_script 'client.lua'
---client_script 'crouch.lua' -- Disabled until npc-recoil gets fixed.
-client_script 'stress.lua'
+client_script 'client/client.lua'
+--client_script 'client/crouch.lua' -- Disabled until npc-recoil gets fixed.
+client_script 'client/stress.lua'

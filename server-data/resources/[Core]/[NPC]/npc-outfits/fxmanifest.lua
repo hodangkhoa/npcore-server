@@ -29,7 +29,7 @@ shared_script {
 }
 
 server_scripts {
-  'server.lua',
+  'server/server.lua',
 }
 
 export "CreateHashList"

@@ -17,5 +17,5 @@ files {
 	"html/sounds/metaldetected.mp3",
 }
 
-client_script 'client.lua'
-server_script 'server.lua'
+client_script 'client/client.lua'
+server_script 'server/server.lua'

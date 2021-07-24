@@ -1,4 +1,4 @@
-![image](https://cdn.discordapp.com/attachments/860905633783480330/860913889313947658/NPCore_Discord_Header.png)
+![image](https://cdn.discordapp.com/attachments/860905633783480330/866200481540866048/NPCore_Discord_Header.png)
 ### Welcome 👋🏼,
 # 🎦 npc-loading-screen
 # Features:
@@ -22,4 +22,4 @@
 Creative Commons License
 <br>
 This work is licensed under a [Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.](http://creativecommons.org/licenses/by-nc-sa/3.0/) 
-![image](https://cdn.discordapp.com/attachments/860133990580486154/860898305114636308/NPC_Header.png)
+![image](https://cdn.discordapp.com/attachments/860905633783480330/866325981340631050/NPC_Header.png)

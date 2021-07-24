@@ -8,9 +8,9 @@ this_is_a_map 'yes'
 
 client_script "@npc-scripts/client/errorlog.lua"
 
-client_script "client.lua"
-client_script "carmap.lua"
-client_script "postal_client.lua"
+client_script "client/client.lua"
+client_script "client/carmap.lua"
+client_script "client/postal_client.lua"
 
 --data_file 'INTERIOR_PROXY_ORDER_FILE' 'interiorproxies.meta'
 data_file 'HANDLING_FILE' 'handling.meta'

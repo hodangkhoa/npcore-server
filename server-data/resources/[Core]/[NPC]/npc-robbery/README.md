@@ -1,4 +1,4 @@
-![image](https://cdn.discordapp.com/attachments/860905633783480330/860913889313947658/NPCore_Discord_Header.png)
+![image](https://cdn.discordapp.com/attachments/860905633783480330/866200481540866048/NPCore_Discord_Header.png)
 ### Welcome 👋🏼,
 # npc-robbery
 👤💰 NPCore Robbery for the NPCore Framework. 🧩
