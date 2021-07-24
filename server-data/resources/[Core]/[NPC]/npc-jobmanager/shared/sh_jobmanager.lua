@@ -101,6 +101,9 @@ NPC.Jobs.ValidJobs = {
         name = "Burger Shot",
         paycheck = 50
     },
-    
+     ["tuner_shop"] = {
+        name = "Tuner Shop Worker",
+        paycheck = 50
+    },
 
 }
