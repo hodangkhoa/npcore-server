@@ -26,7 +26,7 @@ Config.nogrip = true -- When jumping and running, there is an 90% chance of fall
 -- Set to false to disable
 Config.twitter = false -- /twt command?
 Config.dispatch = true -- /dispatch command?
-Config.darkweb = true -- /darkweb command?
+Config.darkweb = false -- /darkweb command?
 Config.news = true -- /news command?
 Config.doo = true -- /do command?
 Config.ooc = true -- /ooc command?
