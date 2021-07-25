@@ -31,5 +31,5 @@ Config.news = true -- /news command?
 Config.doo = true -- /do command?
 Config.ooc = true -- /ooc command?
 Config.me = true -- /me command?
-Config.showid = true -- /showid command?
+Config.showid = false -- /showid command?
 Config.missingargs = '^1Please provide a message.' -- Send this message when a player does not provide a message.
